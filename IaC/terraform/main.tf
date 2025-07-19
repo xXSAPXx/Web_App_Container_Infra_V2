@@ -302,96 +302,21 @@ module "alb_ssl_cert_validation" {
 
 
 
-# Create Lunch Template and the ASG:  
+# Create Containerized Application:  
+# Container Scaling Policies:
 ########################################################################################################
-module "asg" {
-  source     = "./modules/asg"
-  depends_on = [module.database] # Ensure the launch configuration is created only after the RDS Module.
+module "container_app" {
+  source = "./modules/container_app"
+  depends_on = [module.database]
 
-
-  # --- Pass DB_ENDPOINT and PRIVATE_DNS_ZONE to Lunch Template User_Data_Script: ---
+  # --- Pass DB_ENDPOINT and PRIVATE_DNS_ZONE to the Containers: ---
   database_endpoint   = module.database.rds_endpoint
   private_dns_zone_id = module.vpc.private_dns_zone_id
 
+  # --- Container App Settings ---
 
-
-  # --- Launch Template Settings ---
-  launch_template_name_prefix      = "web-server-template"
-  launch_template_image_id         = "ami-0583d8c7a9c35822c"
-  launch_template_instance_type    = "t2.micro"
-  launch_template_key_name         = var.aws_key_pair
-  launch_template_instance_profile = module.iam.launch_template_instance_profile_name
-
-  # EBS: 
-  launch_template_device_name = "/dev/xvda"
-  launch_template_volume_size = 10
-  launch_template_volume_type = "gp2"
-
-  launch_template_security_groups = [module.security_groups.asg_security_group_id]
-
-
-
-  # --- ASG Configuration Settings ---
-  asg_min_size                  = 1
-  asg_max_size                  = 3
-  asg_desired_capacity          = 1
-  asg_vpc_zone_identifier       = [module.vpc.private_subnet_1_id, module.vpc.private_subnet_2_id]
-  asg_target_group_arns         = [module.alb.frontend_target_group_arn, module.alb.backend_target_group_arn]
-  asg_health_check_type         = "ELB"
-  asg_health_check_grace_period = 300
-  asg_tag_name                  = "web-server"
-  asg_propagate_name_at_launch  = true
 }
 
-
-# Create Scaling Policies for the ASG based on Cloud_Watch Metrics:  
-########################################################################################################
-
-module "cloud_watch_alarm_and_scale_policies" {
-  source = "./modules/asg_scaling_policies"
-
-  # --- CPU above 70% Cloud_Watch Alarm Settings ---
-  cpu_above_70_alarm_alarm_name             = "cpu_alarm_high"
-  cpu_above_70_alarm_comparison_operator    = "GreaterThanThreshold"
-  cpu_above_70_alarm_evaluation_periods     = "2"
-  cpu_above_70_alarm_metric_name            = "CPUUtilization"
-  cpu_above_70_alarm_namespace              = "AWS/EC2"
-  cpu_above_70_alarm_period                 = "120"
-  cpu_above_70_alarm_statistic              = "Average"
-  cpu_above_70_alarm_threshold              = "70"
-  cpu_above_70_alarm_alarm_description      = "This metric monitors the average CPU utilization and triggers if it goes above 70%."
-  cpu_above_70_alarm_actions_enabled        = true
-  cpu_above_70_alarm_autoscaling_group_name = module.asg.autoscaling_group_name
-
-  # --- Scale out policy triggered by CPU above 70% Cloud_Watch Alarm ---
-  scale_out_policy_name                   = "scale_out_policy"
-  scale_out_policy_scaling_adjustment     = 1
-  scale_out_policy_adjustment_type        = "ChangeInCapacity"
-  scale_out_policy_cooldown               = 120
-  scale_out_policy_autoscaling_group_name = module.asg.autoscaling_group_id
-
-
-
-  # --- CPU below 50% Cloud_Watch Alarm Settings ---
-  cpu_below_50_alarm_alarm_name             = "cpu_alarm_low"
-  cpu_below_50_alarm_comparison_operator    = "LessThanThreshold"
-  cpu_below_50_alarm_evaluation_periods     = "2"
-  cpu_below_50_alarm_metric_name            = "CPUUtilization"
-  cpu_below_50_alarm_namespace              = "AWS/EC2"
-  cpu_below_50_alarm_period                 = "120"
-  cpu_below_50_alarm_statistic              = "Average"
-  cpu_below_50_alarm_threshold              = "50"
-  cpu_below_50_alarm_alarm_description      = "This metric monitors the average CPU utilization and triggers if it goes below 50%."
-  cpu_below_50_alarm_actions_enabled        = true
-  cpu_below_50_alarm_autoscaling_group_name = module.asg.autoscaling_group_name
-
-  # --- Scale out policy triggered by CPU below 50% Cloud_Watch Alarm ---
-  scale_in_policy_name                   = "scale_in_policy"
-  scale_in_policy_scaling_adjustment     = -1
-  scale_in_policy_adjustment_type        = "ChangeInCapacity"
-  scale_in_policy_cooldown               = 120
-  scale_in_policy_autoscaling_group_name = module.asg.autoscaling_group_id
-}
 
 
 
@@ -401,11 +326,11 @@ module "cloud_watch_alarm_and_scale_policies" {
 ########################################################################################################
 
 output "private_dns_zone_id" {
-  value = module.asg.private_dns_zone_debug
+  value = module.container_app.private_dns_zone_debug
 }
 
 output "rds_endpoint_id" {
-  value = module.asg.rds_endpoint_debug
+  value = module.container_app.rds_endpoint_debug
 }
 
 output "bastion_host_public_ip" {
