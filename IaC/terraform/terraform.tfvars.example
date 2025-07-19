@@ -1,0 +1,15 @@
+
+# Create a file named terraform.tfvars (Ignored in .gitignore) in /terraform direcroy in your local repo with the needed TF variables: 
+# TF_VARS: 
+
+# Cloudflare Variables:
+cloudflare_api_token       = <EXAMPLE>
+cloudflare_zone_id         = <EXAMPLE>
+cloudflare_domain_name     = <EXAMPLE>
+
+# Key pair for the EC2 instances
+aws_key_pair               = <EXAMPLE>
+
+# Where Prometheus will push the metrics:
+prometheus_grafana_user    = <EXAMPLE>
+prometheus_grafana_api_key = <EXAMPLE>

@@ -1,0 +1,15 @@
+
+# Ignore tfvars.file
+IaC/terraform/*.tfvars
+
+# Ignore Terraform working directory
+IaC/terraform/.terraform/
+
+# Ignore Terraform state files
+IaC/terraform/*.tfstate
+IaC/terraform/*.tfstate.backup
+
+# Ignore crash logs, plan and lock files
+IaC/terraform/crash.log
+IaC/terraform/tfplan
+IaC/terraform/.terraform.lock.hcl
