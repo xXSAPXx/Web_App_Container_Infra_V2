@@ -1,6 +1,6 @@
 
 # Dockerfile for the frontend service using Apache HTTP Server:
-FROM httpd:2.4
+FROM httpd:2.4-alpine
 
 # Copy the public directory files to the Apache document root:
 COPY ./public /usr/local/apache2/htdocs/
