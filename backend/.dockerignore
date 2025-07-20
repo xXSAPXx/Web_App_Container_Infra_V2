@@ -1,3 +1,5 @@
+# .dockerignore file for the backend service
+# This file specifies which files and directories should be ignored by Docker when building the image.
 node_modules
 npm-debug.log
 Dockerfile
