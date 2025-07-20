@@ -17,7 +17,7 @@ IaC/terraform/.terraform.lock.hcl
 
 
 ################### Backend Docker Ignore ###################
-node_modules/
-dist/
-*.log
-.env
+backend/node_modules/
+backend/dist/
+backend/*.log
+backend/.env
