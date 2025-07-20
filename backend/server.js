@@ -15,11 +15,12 @@ app.use(bodyParser.json());
 
 // MySQL database connection
 const pool = mysql.createPool({
-  host: 'REPLACE_WITH_DB_ENDPOINT',
-  user: 'admin',
-  password: '12345678',
-  database: 'CALC_APP_DB',
-  connectionLimit: 10
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'admin',
+  password: process.env.DB_PASS || '',
+  database: process.env.DB_NAME || 'CALC_APP_DB',
+  port: process.env.DB_PORT || 3306,
+  connectionLimit: process.env.DB_CONNECTION_LIMIT || 10,
 });
 
 // Test the MySQL connection

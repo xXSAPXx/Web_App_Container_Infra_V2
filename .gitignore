@@ -1,4 +1,6 @@
 
+##################### Terraform Ignore ######################
+
 # Ignore tfvars.file
 IaC/terraform/*.tfvars
 
@@ -21,3 +23,5 @@ backend/node_modules/
 backend/dist/
 backend/*.log
 backend/.env
+
+
