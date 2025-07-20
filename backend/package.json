@@ -14,8 +14,8 @@
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.10.3"
+    "express": "^4.19.3",
+    "jsonwebtoken": "^9.0.4",
+    "mysql2": "^3.11.0"
   }
 }
