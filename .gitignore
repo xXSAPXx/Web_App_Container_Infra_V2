@@ -13,3 +13,11 @@ IaC/terraform/*.tfstate.backup
 IaC/terraform/crash.log
 IaC/terraform/tfplan
 IaC/terraform/.terraform.lock.hcl
+
+
+
+################### Backend Docker Ignore ###################
+node_modules/
+dist/
+*.log
+.env
