@@ -18,7 +18,7 @@ const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'admin',
   password: process.env.DB_PASS || '',
-  database: process.env.DB_NAME || 'CALC_APP_DB',
+  database: process.env.DB_NAME || 'calc_app_db',
   port: process.env.DB_PORT || 3306,
   connectionLimit: process.env.DB_CONNECTION_LIMIT || 10,
 });
@@ -27,7 +27,7 @@ const pool = mysql.createPool({
 pool.getConnection((err, connection) => {
   if (err) {
     // Log the error to server.log
-    logStream.write(`[${new Date().toISOString()}] Error connecting to MySQL: ${err.message}\n`);
+    console.error(`[${new Date().toISOString()}] Error connecting to MySQL: ${err.message}`);
     console.error('Error connecting to MySQL:', err);
     process.exit(1); // Exit the process with an error code
   } else {
