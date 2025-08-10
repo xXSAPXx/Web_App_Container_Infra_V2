@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevCalc</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+
+    <div class="container">
+        <form id="auth-form" class="form-section active">
+            <h1>Login</h1>
+            <div id="login-error" class="error-message"></div>
+            <input id="login-username" type="text" placeholder="Username" required>
+            <input id="login-password" type="password" placeholder="Password" required>
+            <button type="submit" id="login-button">Login</button>
+            <p>Don't have an account? <button type="button" id="show-register-button" class="link-button">Register</button></p>
+        </form>
+
+        <form id="register-form" class="form-section">
+            <h1>Register</h1>
+            <div id="register-error" class="error-message"></div>
+            <input id="register-username" type="text" placeholder="Username" required>
+            <input id="register-password" type="password" placeholder="Password" required>
+            <button type="submit" id="register-button">Register</button>
+            <p>Already have an account? <button type="button" id="show-login-button" class="link-button">Login</button></p>
+        </form>
+
+        <div id="calc-section" class="calculator-container">
+            <div class="calculator-header">
+                 <h1>Calculator</h1>
+                 <button id="logout-button">Logout</button>
+            </div>
+            <div id="calculator">
+                <input id="display" type="text" readonly>
+                <button class="button calc-button">7</button>
+                <button class="button calc-button">8</button>
+                <button class="button calc-button">9</button>
+                <button class="button calc-button operator">/</button>
+                <button class="button calc-button">4</button>
+                <button class="button calc-button">5</button>
+                <button class="button calc-button">6</button>
+                <button class="button calc-button operator">*</button>
+                <button class="button calc-button">1</button>
+                <button class="button calc-button">2</button>
+                <button class="button calc-button">3</button>
+                <button class="button calc-button operator">-</button>
+                <button class="button calc-button">0</button>
+                <button class="button calc-button">.</button>
+                <button class="button calc-button equals">=</button>
+                <button class="button calc-button operator">+</button>
+                <button class="button calc-button clear">C</button>
+             </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

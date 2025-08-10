@@ -1,61 +1,323 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevCalc</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DevOps Portfolio Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            background-color: #f7f9fc;
+            color: #333;
+        }
+        header {
+            background: linear-gradient(90deg, #4db6ac, #81c784);
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 3rem;
+        }
+        header p {
+            margin-top: 0.6rem;
+            font-size: 1.5rem;
+        }
+        nav.tabs {
+            background-color: ;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            padding: 1.5rem;
+        }
+        nav.tabs button {
+            background: white;
+            border: black;
+            padding: 1rem 3rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+            color: #4db6ac;
+            border-radius: 15px;
+            box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+        nav.tabs button:hover {
+            transform: translateY(-5px);
+            background-color: #DCDCDC;
+        }
+        .tab-content {
+            /* We will use a new class for a smooth fade effect */
+            max-width: 600px;
+            margin: 1rem auto;
+            background: white;
+            border-radius: 8px;
+            padding: 1.2rem;
+            box-shadow: 0 10px 8px rgba(0,0,0,0.05);
+        }
+        /* New CSS for fade effect */
+        .fade-in-out {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out;
+            pointer-events: none; /* Prevents clicks on hidden elements */
+        }
+        .fade-in-out.visible {
+            opacity: 1;
+            max-height: 500px; /* A large value to allow content to show */
+            pointer-events: auto; /* Re-enables clicks when visible */
+        }
+        .tab-content a, .tab-content button.copy-btn {
+            display: block;
+            margin: 0.8rem 0;
+            text-decoration: none;
+            color: #4db6ac;
+            font-weight: bold;
+        }
+        .tab-content button.copy-btn {
+            background: #4db6ac;
+            color: white;
+            border: none;
+            padding: 0.3rem 0.9rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        section.about {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 1rem 1rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 12px 8px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+        main {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s ease;
+        }
+        .card:hover {
+            transform: translateY(-8px);
+        }
+        .card img {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 1rem;
+        }
+        .card h3 {
+            margin-bottom: 0.5rem;
+        }
+        .card p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .card button {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: #4db6ac;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .card button:hover {
+            background-color: #39978f;
+        }
+        .infra-map {
+            text-align: center;
+            padding: 1rem;
+        }
+        .infra-step {
+            display: inline-block;
+            text-align: center;
+            margin: 0 10px;
+        }
+        .infra-step img {
+            width: 60px;
+            height: 60px;
+            display: block;
+            margin: 0 auto 0.5rem auto;
+        }
+        .arrow {
+            font-size: 2rem;
+            vertical-align: middle;
+        }
+        .you-here {
+            margin-top: 0.5rem;
+            font-weight: bold;
+            color: #4db6ac;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            color: #777;
+            font-size: 0.85rem;
+        }
+    </style>
+    <script>
+        // Use a function to safely copy text to the clipboard
+        function copyText(text) {
+            // This method is more reliable in various browser environments
+            const tempInput = document.createElement('textarea');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            // Use a custom message box instead of alert()
+            showMessageBox('Copied to clipboard: ' + text);
+        }
+
+        // Custom message box function to replace alert()
+        function showMessageBox(message) {
+            const messageBox = document.createElement('div');
+            messageBox.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                padding: 20px;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: white;
+                border-radius: 10px;
+                font-family: 'Roboto', sans-serif;
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.3s ease-in-out;
+            `;
+            messageBox.textContent = message;
+            document.body.appendChild(messageBox);
+            
+            // Fade in
+            setTimeout(() => {
+                messageBox.style.opacity = '1';
+            }, 10);
+            
+            // Fade out and remove
+            setTimeout(() => {
+                messageBox.style.opacity = '0';
+                setTimeout(() => document.body.removeChild(messageBox), 300);
+            }, 2000);
+        }
+    
+        // Modified toggleMap function for smooth fade effect
+        function toggleMap(button) {
+            const map = document.getElementById('infra-map');
+            map.classList.toggle('visible');
+            if (map.classList.contains('visible')) {
+                button.textContent = 'Hide Map';
+            } else {
+                button.textContent = 'View Map';
+            }
+        }
+
+        // Modified toggleContacts function for smooth fade effect
+        function toggleContacts(button) {
+            const tab = document.getElementById('contact');
+            tab.classList.toggle('visible');
+            if (tab.classList.contains('visible')) {
+                button.textContent = 'Hide Contacts 🌐';
+            } else {
+                button.textContent = 'Show Contacts 🌐';
+            }
+        }
+
+        // Keep this function as is, it's not used by the new buttons
+        function showTab(id) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('visible'));
+            document.getElementById(id).classList.add('visible');
+        }
+
+    </script>
 </head>
 <body>
+    <header>
+        <h1>Simeon's Portfolio Hub</h1>
+        <p>Master of Pharmacy turned DBA & DevOps</p>
+    </header>
 
-    <div class="container">
-        <form id="auth-form" class="form-section active">
-            <h1>Login</h1>
-            <div id="login-error" class="error-message"></div>
-            <input id="login-username" type="text" placeholder="Username" required>
-            <input id="login-password" type="password" placeholder="Password" required>
-            <button type="submit" id="login-button">Login</button>
-            <p>Don't have an account? <button type="button" id="show-register-button" class="link-button">Register</button></p>
-        </form>
+    <nav class="tabs">
+        <button onclick="toggleContacts(this)">Show Contacts 🌐</button>
+        <button onclick="window.open('https://github.com/xXSAPXx', '_blank')">GitHub Account 👨‍💻</button>
+    </nav>
 
-        <form id="register-form" class="form-section">
-            <h1>Register</h1>
-            <div id="register-error" class="error-message"></div>
-            <input id="register-username" type="text" placeholder="Username" required>
-            <input id="register-password" type="password" placeholder="Password" required>
-            <button type="submit" id="register-button">Register</button>
-            <p>Already have an account? <button type="button" id="show-login-button" class="link-button">Login</button></p>
-        </form>
-
-        <div id="calc-section" class="calculator-container">
-            <div class="calculator-header">
-                 <h1>Calculator</h1>
-                 <button id="logout-button">Logout</button>
-            </div>
-            <div id="calculator">
-                <input id="display" type="text" readonly>
-                <button class="button calc-button">7</button>
-                <button class="button calc-button">8</button>
-                <button class="button calc-button">9</button>
-                <button class="button calc-button operator">/</button>
-                <button class="button calc-button">4</button>
-                <button class="button calc-button">5</button>
-                <button class="button calc-button">6</button>
-                <button class="button calc-button operator">*</button>
-                <button class="button calc-button">1</button>
-                <button class="button calc-button">2</button>
-                <button class="button calc-button">3</button>
-                <button class="button calc-button operator">-</button>
-                <button class="button calc-button">0</button>
-                <button class="button calc-button">.</button>
-                <button class="button calc-button equals">=</button>
-                <button class="button calc-button operator">+</button>
-                <button class="button calc-button clear">C</button>
-             </div>
-        </div>
+    <!-- Contacts tab with fade-in-out class -->
+    <div id="contact" class="tab-content fade-in-out">
+        <a href="mailto:xXSAPXx@proton.me">Email: xXSAPXx@proton.me</a>
+        <button class="copy-btn" onclick="copyText('xXSAPXx@proton.me')">Copy Email</button>
+        <a href="https://www.linkedin.com/in/simeon-asenov-petkov/" target="_blank">LinkedIn Profile: https://www.linkedin.com/in/simeon-asenov-petkov/</a>
+        <button class="copy-btn" onclick="copyText('https://www.linkedin.com/in/simeon-asenov-petkov/')">Copy LinkedIn</button>
     </div>
 
-    <script src="script.js"></script>
+    <section class="about">
+        <p>In my 4th year at pharmacy university, I discovered my passion for technology and began my journey into Databases 💾, DevOps 🎯, and Cloud 🌩️.</p>
+    </section>
+
+    <main>
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/992/992700.png" alt="Calculator Icon">
+            <h3>Calculator App</h3>
+            <p>Where it all began ❤️ – my very first project.</p>
+            <button onclick="location.href='calc.html'">Open</button>
+        </div>
+
+        <div class="card">
+            <img src="https://cdn-icons-png.flaticon.com/512/4257/4257483.png" alt="Tech Infrastructure Icon">
+            <h3>Check Infrastructure Map</h3>
+            <p>Visualizing my current container-based architecture.</p>
+            <button onclick="toggleMap(this)">View Map</button>
+        </div>
+    </main>
+
+    <!-- Infra map with fade-in-out class -->
+    <section id="infra-map" class="infra-map fade-in-out">
+        <div class="infra-step">
+            <img src="https://img.icons8.com/?size=100&id=P7yGjzZLEDOc&format=png&color=000000" alt="Browser Icon">
+            <div>Browser</div>
+        </div>
+        <span class="arrow">➡️</span>
+        <div class="infra-step">
+            <img src="https://img.icons8.com/?size=100&id=t2x6DtCn5Zzx&format=png&color=000000" alt="Nginx Icon">
+            <div>Nginx Container</div>
+        </div>
+        <span class="arrow">➡️</span>
+        <div class="infra-step">
+            <img src="https://img.icons8.com/?size=100&id=ZzYf4SXUhPDd&format=png&color=000000" alt="Frontend Icon">
+            <div>Frontend Container</div>
+        </div>
+        <span class="arrow">➡️</span>
+        <div class="infra-step">
+            <img src="https://img.icons8.com/?size=100&id=60035&format=png&color=000000" alt="Backend Icon">
+            <div>Backend Container</div>
+        </div>
+        <span class="arrow">➡️</span>
+        <div class="infra-step">
+            <img src="https://img.icons8.com/?size=100&id=hYoELNwniGhi&format=png&color=000000" alt="MySQL Icon">
+            <div>MySQL DB Container</div>
+        </div>
+    </section>
+
+    <footer>
+        &copy; 2025 Simeon - Built with passion and containers 🐳
+    </footer>
 </body>
 </html>
