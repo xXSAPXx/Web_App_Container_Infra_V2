@@ -143,8 +143,22 @@
             background-color: #39978f;
         }
         .infra-map {
+            background: white;              
+            border-radius: 12px;            
+            box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;         
             text-align: center;
-            padding: 1rem;
+            transition: transform 0.2s ease;
+            max-width: 550px;
+            margin: 0 auto;                 
+        }
+
+        .infra-map object,
+        .infra-map svg {
+            display: block;
+            max-width: 100%;                
+            height: auto;                   
+            margin: 0 auto;            
         }
         .infra-step {
             display: inline-block;
@@ -156,15 +170,6 @@
             height: 60px;
             display: block;
             margin: 0 auto 0.5rem auto;
-        }
-        .arrow {
-            font-size: 2rem;
-            vertical-align: middle;
-        }
-        .you-here {
-            margin-top: 0.5rem;
-            font-weight: bold;
-            color: #4db6ac;
         }
         footer {
             text-align: center;
@@ -300,7 +305,7 @@
 
     <!-- Infra map svg file with fade-in-out class -->
 <section id="infra-map" class="infra-map fade-in-out">
-    <object type="image/svg+xml" data="infra_map.svg"></object>
+    <object type="image/svg+xml" data="infra_map.svg" class="infra-svg"></object>
 </section>
 
     <footer>
