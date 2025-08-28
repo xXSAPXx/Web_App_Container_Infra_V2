@@ -143,23 +143,38 @@
             background-color: #39978f;
         }
         .infra-map {
-            background: white;              
-            border-radius: 12px;            
-            box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;         
-            text-align: center;
-            transition: transform 0.2s ease;
-            max-width: 550px;
-            margin: 0 auto;                 
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 15px 8px #0000000d;
+            max-width: 750px;
+            margin: 0 auto;
+            overflow: hidden;                   /* needed for the crop trick */
+            max-height: 0;                      /* collapsed */
+            opacity: 0;
+            transition: max-height 0.6s ease, opacity 0.6s ease, margin-top 0.6s ease;
+        }
+        .infra-map.visible {
+            max-height: 1100px;                 /* enough room for the SVG */
+            opacity: 1;
+            margin-top: 1rem;                   /* pushes page downward smoothly */
+        }
+        .infra-frame {
+            position: relative;                 /* Crop 1px from top/left to hide the inner hairline */
+        }
+        .infra-map .infra-svg {
+            display: block;
+            width: calc(100% + 2px);            /* widen by 2px and shift -1px/-1px so the inner top/left line is clipped. */
+            height: auto;                       /* overflow:hidden on .infra-map makes this invisible. */
+            margin-top: -1px;
+            margin-left: -1px;
+            border: 0 !important;
+            outline: 0 !important;
+            background: white;
+        }
+        .infra-map .infra-svg:focus {
+            outline: none;                      /* Optional: ensures the embed doesn’t introduce its own focus outline */
         }
 
-        .infra-map object,
-        .infra-map svg {
-            display: block;
-            max-width: 100%;                
-            height: auto;                   
-            margin: 0 auto;            
-        }
         .infra-step {
             display: inline-block;
             text-align: center;
@@ -303,9 +318,11 @@
         </div>
     </main>
 
-    <!-- Infra map svg file with fade-in-out class -->
-<section id="infra-map" class="infra-map fade-in-out">
-    <object type="image/svg+xml" data="infra_map.svg" class="infra-svg"></object>
+<!-- Toggle button calls toggleMap(this) -->
+<section id="infra-map" class="infra-map">
+  <div class="infra-frame">
+    <embed src="infra_map.svg" type="image/svg+xml" class="infra-svg">
+  </div>
 </section>
 
     <footer>
