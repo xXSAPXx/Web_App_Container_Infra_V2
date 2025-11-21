@@ -3,101 +3,162 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Simeon Petkov (xXSAPXx) - Portfolio. Master of Pharmacy turned DBA & DevOps Engineer.">
+    <meta name="author" content="Simeon Petkov">
+    
     <title>Simeon's Portfolio Hub</title>
+    
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" href="homepage_favicon.ico" type="image/x-icon">
+
     <style>
+        /* --- Global Variables --- */
+        :root {
+            --primary-gradient: linear-gradient(90deg, #4db6ac, #81c784);
+            --accent-color: #4db6ac;
+            --accent-hover: #39978f;
+            --bg-color: #f7f9fc;
+            --text-color: #333;
+        }
+
         body {
             font-family: 'Roboto', sans-serif;
             margin: 0;
-            background-color: #f7f9fc;
-            color: #333;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
         }
+
+        /* --- Header with Canvas --- */
         header {
-            background: linear-gradient(90deg, #4db6ac, #81c784);
+            background: var(--primary-gradient);
             color: white;
-            padding: 2.5rem;
+            padding: 4rem 1rem; /* Increased padding for more space */
             text-align: center;
+            position: relative; /* Needed for canvas positioning */
+            overflow: hidden;   /* Keeps particles inside header */
         }
+
+        /* The animated background */
+        #network-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Behind text */
+            opacity: 0.6;
+        }
+
+        /* The text content sitting on top */
+        .header-content {
+            position: relative;
+            z-index: 1; /* In front of canvas */
+            pointer-events: none; /* Lets clicks pass through to canvas if needed */
+        }
+
         header h1 {
             margin: 0;
-            font-size: 3rem;
+            font-size: 3.5rem; /* Slightly bigger */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
         header p {
-            margin-top: 0.6rem;
+            margin-top: 1rem;
             font-size: 1.5rem;
+            font-weight: 300;
+            min-height: 1.6em; /* Prevents jump when typing */
         }
+
+        /* The blinking cursor for typewriter effect */
+        .cursor {
+            display: inline-block;
+            width: 3px;
+            background-color: white;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* --- Navigation Buttons --- */
         nav.tabs {
             display: flex;
             justify-content: center;
-            gap: 4rem;
+            flex-wrap: wrap;
+            gap: 2rem;
             padding: 1.5rem;
+            margin-top: -2rem; /* Overlap effect with header */
+            position: relative;
+            z-index: 2;
         }
+
         nav.tabs button {
             background: white;
-            border: black;
+            border: none;
             padding: 1rem 3rem;
-            border-radius: 5px;
+            border-radius: 15px;
             cursor: pointer;
             font-size: 1rem;
             font-weight: bold;
-            text-align: center;
-            color: #4db6ac;
-            border-radius: 15px;
-            box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
-            transition: transform 0.2s ease;
+            color: var(--accent-color);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
         }
+
         nav.tabs button:hover {
             transform: translateY(-5px);
-            background-color: #DCDCDC;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
         }
+
+        /* --- Rest of Styles (Same as before) --- */
         .tab-content {
-            /* We will use a new class for a smooth fade effect */
             max-width: 600px;
             margin: 1rem auto;
             background: white;
             border-radius: 8px;
             padding: 1em;
             box-shadow: 0 10px 8px rgba(0,0,0,0.05);
-        }
-        /* New CSS for fade effect */
-        .fade-in-out {
-            margin: 0 auto;
-            opacity: 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out;
-            pointer-events: none; /* Prevents clicks on hidden elements */
-        }
-        .fade-in-out.visible {
-            opacity: 1;
-            max-height: 500px; /* A large value to allow content to show */
-            pointer-events: auto; /* Re-enables clicks when visible */
+            text-align: center;
         }
         .tab-content a, .tab-content button.copy-btn {
             display: block;
-            margin: 0.8rem 0;
+            margin: 0.8rem auto;
             text-decoration: none;
-            color: #4db6ac;
+            color: var(--accent-color);
             font-weight: bold;
+            width: fit-content;
         }
         .tab-content button.copy-btn {
-            background: #4db6ac;
+            background: var(--accent-color);
             color: white;
             border: none;
             padding: 0.3rem 0.9rem;
             border-radius: 4px;
             cursor: pointer;
+            transition: background 0.2s;
         }
+        .tab-content button.copy-btn:hover { background: var(--accent-hover); }
+        
+        .fade-in-out {
+            margin: 0 auto; opacity: 0; max-height: 0; overflow: hidden;
+            transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out;
+            pointer-events: none;
+        }
+        .fade-in-out.visible { opacity: 1; max-height: 500px; pointer-events: auto; }
+
         section.about {
             max-width: 800px;
-            margin: 1.5rem auto;
-            padding: 1rem 1rem;
+            margin: 3rem auto 1.5rem auto;
+            padding: 2rem;
             background: white;
             border-radius: 12px;
             box-shadow: 0 12px 8px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
+
         main {
             max-width: 1000px;
             margin: 2rem auto;
@@ -106,6 +167,7 @@
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
         }
+
         .card {
             background: white;
             border-radius: 12px;
@@ -113,180 +175,59 @@
             padding: 1.5rem;
             text-align: center;
             transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
         }
-        .card:hover {
-            transform: translateY(-8px);
-        }
-        .card img {
-            width: 50px;
-            height: 50px;
-            margin-bottom: 1rem;
-        }
-        .card h3 {
-            margin-bottom: 0.5rem;
-        }
-        .card p {
-            font-size: 0.9rem;
-            color: #666;
-        }
+        .card:hover { transform: translateY(-8px); }
+        .card img { width: 50px; height: 50px; margin-bottom: 1rem; object-fit: contain; }
+        .card h3 { margin: 0 0 0.5rem 0; }
+        .card p { font-size: 0.9rem; color: #666; margin-bottom: 1.5rem; }
         .card button {
-            margin-top: 1rem;
-            padding: 0.5rem 1rem;
-            background-color: #4db6ac;
-            border: none;
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            font-weight: bold;
+            padding: 0.5rem 1rem; background-color: var(--accent-color);
+            border: none; border-radius: 8px; color: white;
+            cursor: pointer; font-weight: bold; transition: background-color 0.2s;
         }
-        .card button:hover {
-            background-color: #39978f;
-        }
+        .card button:hover { background-color: var(--accent-hover); }
+
         .infra-map {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 15px 8px #0000000d;
-            max-width: 750px;
-            margin: 0 auto;
-            overflow: hidden;                   /* needed for the crop trick */
-            max-height: 0;                      /* collapsed */
-            opacity: 0;
+            background: white; border-radius: 12px; box-shadow: 0 15px 8px #0000000d;
+            max-width: 750px; margin: 0 auto; overflow: hidden;
+            max-height: 0; opacity: 0;
             transition: max-height 0.6s ease, opacity 0.6s ease, margin-top 0.6s ease;
         }
-        .infra-map.visible {
-            max-height: 1100px;                 /* enough room for the SVG */
-            opacity: 1;
-            margin-top: 1rem;                   /* pushes page downward smoothly */
-        }
-        .infra-frame {
-            position: relative;                 /* Crop 1px from top/left to hide the inner hairline */
-        }
-        .infra-map .infra-svg {
-            display: block;
-            width: calc(100% + 2px);            /* widen by 2px and shift -1px/-1px so the inner top/left line is clipped. */
-            height: auto;                       /* overflow:hidden on .infra-map makes this invisible. */
-            margin-top: -1px;
-            margin-left: -1px;
-            border: 0 !important;
-            outline: 0 !important;
-            background: white;
-        }
-        .infra-map .infra-svg:focus {
-            outline: none;                      /* Optional: ensures the embed doesn’t introduce its own focus outline */
-        }
+        .infra-map.visible { max-height: 1100px; opacity: 1; margin-top: 1rem; margin-bottom: 2rem; }
+        .infra-frame { position: relative; }
+        .infra-map .infra-svg { display: block; width: calc(100% + 2px); height: auto; margin-top: -1px; margin-left: -1px; border: 0; }
 
-        .infra-step {
-            display: inline-block;
-            text-align: center;
-            margin: 0 10px;
-        }
-        .infra-step img {
-            width: 60px;
-            height: 60px;
-            display: block;
-            margin: 0 auto 0.5rem auto;
-        }
-        footer {
-            text-align: center;
-            padding: 1rem;
-            color: #777;
-            font-size: 0.85rem;
-        }
+        footer { text-align: center; padding: 2rem 1rem; color: #777; font-size: 0.85rem; }
     </style>
-    <script>
-        // Use a function to safely copy text to the clipboard
-        function copyText(text) {
-            // This method is more reliable in various browser environments
-            const tempInput = document.createElement('textarea');
-            tempInput.value = text;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            // Use a custom message box instead of alert()
-            showMessageBox('Copied to clipboard: ' + text);
-        }
-
-        // Custom message box function to replace alert()
-        function showMessageBox(message) {
-            const messageBox = document.createElement('div');
-            messageBox.style.cssText = `
-                position: fixed;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                padding: 20px;
-                background-color: rgba(0, 0, 0, 0.8);
-                color: white;
-                border-radius: 10px;
-                font-family: 'Roboto', sans-serif;
-                z-index: 1000;
-                opacity: 0;
-                transition: opacity 0.3s ease-in-out;
-            `;
-            messageBox.textContent = message;
-            document.body.appendChild(messageBox);
-            
-            // Fade in
-            setTimeout(() => {
-                messageBox.style.opacity = '1';
-            }, 10);
-            
-            // Fade out and remove
-            setTimeout(() => {
-                messageBox.style.opacity = '0';
-                setTimeout(() => document.body.removeChild(messageBox), 300);
-            }, 2000);
-        }
-    
-        // Modified toggleMap function for smooth fade effect
-        function toggleMap(button) {
-            const map = document.getElementById('infra-map');
-            map.classList.toggle('visible');
-            if (map.classList.contains('visible')) {
-                button.textContent = 'Hide Map';
-            } else {
-                button.textContent = 'View Map';
-            }
-        }
-
-        // Modified toggleContacts function for smooth fade effect
-        function toggleContacts(button) {
-            const tab = document.getElementById('contact');
-            tab.classList.toggle('visible');
-            if (tab.classList.contains('visible')) {
-                button.textContent = 'Hide Contacts 🌐';
-            } else {
-                button.textContent = 'Show Contacts 🌐';
-            }
-        }
-
-        // Keep this function as is, it's not used by the new buttons
-        function showTab(id) {
-            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('visible'));
-            document.getElementById(id).classList.add('visible');
-        }
-
-    </script>
 </head>
 <body>
+
     <header>
-        <h1>Simeon's Portfolio Hub</h1>
-        <p>Master of Pharmacy turned DBA & DevOps</p>
+        <canvas id="network-canvas"></canvas>
+        
+        <div class="header-content">
+            <h1>Simeon's Portfolio Hub</h1>
+            <p>
+                <span id="typewriter-text"></span><span class="cursor">&nbsp;</span>
+            </p>
+        </div>
     </header>
 
     <nav class="tabs">
-        <button onclick="toggleContacts(this)">Show Contacts 🌐</button>
-        <button onclick="window.open('https://github.com/xXSAPXx', '_blank')">GitHub Account 👨‍💻</button>
+        <button id="btn-toggle-contacts" aria-expanded="false">Show Contacts 🌐</button>
+        <button id="btn-github">GitHub Account 👨‍💻</button>
     </nav>
 
-    <!-- Contacts tab with fade-in-out class -->
     <div id="contact" class="tab-content fade-in-out">
         <a href="mailto:xXSAPXx@proton.me">Email: xXSAPXx@proton.me</a>
-        <button class="copy-btn" onclick="copyText('xXSAPXx@proton.me')">Copy Email</button>
-        <a href="https://www.linkedin.com/in/simeon-asenov-petkov/" target="_blank">LinkedIn Profile: https://www.linkedin.com/in/simeon-asenov-petkov/</a>
-        <button class="copy-btn" onclick="copyText('https://www.linkedin.com/in/simeon-asenov-petkov/')">Copy LinkedIn</button>
+        <button class="copy-btn" data-copy="xXSAPXx@proton.me">Copy Email</button>
+        
+        <a href="https://www.linkedin.com/in/simeon-asenov-petkov/" target="_blank">LinkedIn Profile</a>
+        <button class="copy-btn" data-copy="https://www.linkedin.com/in/simeon-asenov-petkov/">Copy LinkedIn</button>
     </div>
 
     <section class="about">
@@ -303,30 +244,209 @@
     </section>
 
     <main>
-        <div class="card">
+        <article class="card">
             <img src="https://cdn-icons-png.flaticon.com/512/992/992700.png" alt="Calculator Icon">
             <h3>Calculator App</h3>
             <p>Where it all began ❤️ – my very first project.</p>
             <button onclick="location.href='calculator/index.html'">Open</button>
-        </div>
+        </article>
 
-        <div class="card">
+        <article class="card">
             <img src="https://cdn-icons-png.flaticon.com/512/4257/4257483.png" alt="Tech Infrastructure Icon">
             <h3>Check Infrastructure Map</h3>
             <p>Visualizing my current container-based architecture.</p>
-            <button onclick="toggleMap(this)">View Map</button>
-        </div>
+            <button id="btn-toggle-map" aria-expanded="false">View Map</button>
+        </article>
     </main>
 
-<!-- Toggle button calls toggleMap(this) -->
-<section id="infra-map" class="infra-map">
-  <div class="infra-frame">
-    <embed src="infra_map.svg" type="image/svg+xml" class="infra-svg">
-  </div>
-</section>
+    <section id="infra-map" class="infra-map">
+        <div class="infra-frame">
+            <embed src="infra_map.svg" type="image/svg+xml" class="infra-svg" title="Infrastructure Map Diagram">
+        </div>
+    </section>
 
     <footer>
         &copy; 2025 Simeon Petkov (xXSAPXx) - Built with passion and containers 🐳
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 1. Typewriter Effect ---
+            const textElement = document.getElementById('typewriter-text');
+            const phrases = [
+                "Master of Pharmacy...",
+                "...turned DBA 💾",
+                "...turned DevOps 🚀"
+            ];
+            let phraseIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+            let typeSpeed = 100;
+
+            function typeWriter() {
+                const currentPhrase = phrases[phraseIndex];
+                
+                if (isDeleting) {
+                    textElement.textContent = currentPhrase.substring(0, charIndex - 1);
+                    charIndex--;
+                    typeSpeed = 50; // Delete faster
+                } else {
+                    textElement.textContent = currentPhrase.substring(0, charIndex + 1);
+                    charIndex++;
+                    typeSpeed = 100; // Type normal speed
+                }
+
+                if (!isDeleting && charIndex === currentPhrase.length) {
+                    // Finished typing phrase
+                    isDeleting = true;
+                    typeSpeed = 2000; // Pause at end
+                    
+                    // If it's the last phrase, stop deleting to keep it there
+                    if(phraseIndex === phrases.length - 1) {
+                        isDeleting = false;
+                        return; // Stop animation
+                    }
+
+                } else if (isDeleting && charIndex === 0) {
+                    // Finished deleting
+                    isDeleting = false;
+                    phraseIndex++;
+                    typeSpeed = 500;
+                }
+
+                setTimeout(typeWriter, typeSpeed);
+            }
+            
+            // Start typing
+            typeWriter();
+
+
+            // --- 2. Particle Network Animation (Canvas) ---
+            const canvas = document.getElementById('network-canvas');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = canvas.parentElement.offsetHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            class Particle {
+                constructor() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2 + 1;
+                    this.speedX = Math.random() * 1 - 0.5;
+                    this.speedY = Math.random() * 1 - 0.5;
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    if (this.x > canvas.width) this.x = 0;
+                    if (this.x < 0) this.x = canvas.width;
+                    if (this.y > canvas.height) this.y = 0;
+                    if (this.y < 0) this.y = canvas.height;
+                }
+                draw() {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            function initParticles() {
+                particles = [];
+                const numberOfParticles = Math.floor(canvas.width / 15); // Density
+                for (let i = 0; i < numberOfParticles; i++) {
+                    particles.push(new Particle());
+                }
+            }
+
+            function animateParticles() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+                    
+                    // Draw connections
+                    for (let j = i; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < 100) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 - distance/500})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animateParticles);
+            }
+
+            initParticles();
+            animateParticles();
+
+
+            // --- 3. Existing Logic (Buttons) ---
+            document.getElementById('btn-github').addEventListener('click', () => {
+                window.open('https://github.com/xXSAPXx', '_blank');
+            });
+
+            const contactBtn = document.getElementById('btn-toggle-contacts');
+            contactBtn.addEventListener('click', () => toggleContacts(contactBtn));
+
+            const mapBtn = document.getElementById('btn-toggle-map');
+            mapBtn.addEventListener('click', () => toggleMap(mapBtn));
+
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => copyText(btn.getAttribute('data-copy')));
+            });
+        });
+
+        // Helper functions
+        function toggleContacts(button) {
+            const tab = document.getElementById('contact');
+            const isVisible = tab.classList.toggle('visible');
+            button.textContent = isVisible ? 'Hide Contacts 🌐' : 'Show Contacts 🌐';
+            button.setAttribute('aria-expanded', isVisible);
+        }
+
+        function toggleMap(button) {
+            const map = document.getElementById('infra-map');
+            const isVisible = map.classList.toggle('visible');
+            button.textContent = isVisible ? 'Hide Map' : 'View Map';
+            button.setAttribute('aria-expanded', isVisible);
+        }
+
+        async function copyText(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showMessageBox('Copied: ' + text);
+            } catch (err) { showMessageBox('Error copying text'); }
+        }
+
+        function showMessageBox(message) {
+            const msg = document.createElement('div');
+            Object.assign(msg.style, {
+                position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                padding: '20px', background: 'rgba(0,0,0,0.8)', color: 'white', borderRadius: '10px',
+                zIndex: '2000', opacity: '0', transition: 'opacity 0.3s'
+            });
+            msg.textContent = message;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.style.opacity = '1', 10);
+            setTimeout(() => {
+                msg.style.opacity = '0';
+                setTimeout(() => msg.remove(), 300);
+            }, 2000);
+        }
+    </script>
 </body>
 </html>
