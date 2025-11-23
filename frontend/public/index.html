@@ -8,7 +8,7 @@
     
     <title>Simeon's Portfolio Hub</title>
     
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
     <link rel="icon" href="homepage_favicon.ico" type="image/x-icon">
 
     <style>
@@ -33,169 +33,158 @@
         header {
             background: var(--primary-gradient);
             color: white;
-            padding: 4rem 1rem; /* Increased padding for more space */
+            padding: 4rem 1rem;
             text-align: center;
-            position: relative; /* Needed for canvas positioning */
-            overflow: hidden;   /* Keeps particles inside header */
+            position: relative;
+            overflow: hidden;
         }
 
-        /* The animated background */
         #network-canvas {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0; /* Behind text */
-            opacity: 0.6;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; opacity: 0.6;
         }
 
-        /* The text content sitting on top */
         .header-content {
-            position: relative;
-            z-index: 1; /* In front of canvas */
-            pointer-events: none; /* Lets clicks pass through to canvas if needed */
+            position: relative; z-index: 1; pointer-events: none;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 3.5rem; /* Slightly bigger */
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
+        header h1 { margin: 0; font-size: 3.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header p { margin-top: 1rem; font-size: 1.5rem; font-weight: 300; min-height: 1.6em; }
 
-        header p {
-            margin-top: 1rem;
-            font-size: 1.5rem;
-            font-weight: 300;
-            min-height: 1.6em; /* Prevents jump when typing */
+        .cursor-blink {
+            display: inline-block; width: 3px; background-color: white; animation: blink 1s infinite;
         }
-
-        /* The blinking cursor for typewriter effect */
-        .cursor {
-            display: inline-block;
-            width: 3px;
-            background-color: white;
-            animation: blink 1s infinite;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
         /* --- Navigation Buttons --- */
         nav.tabs {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 2rem;
-            padding: 1.5rem;
-            margin-top: -2rem; /* Overlap effect with header */
-            position: relative;
-            z-index: 2;
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem;
+            padding: 1.5rem; margin-top: -2rem; position: relative; z-index: 2;
         }
 
         nav.tabs button {
-            background: white;
-            border: none;
-            padding: 1rem 3rem;
-            border-radius: 15px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
-            color: var(--accent-color);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
+            background: white; border: none; padding: 1rem 3rem; border-radius: 15px;
+            cursor: pointer; font-size: 1rem; font-weight: bold; color: var(--accent-color);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;
         }
 
         nav.tabs button:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
+            transform: translateY(-5px); box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
         }
 
-        /* --- Rest of Styles (Same as before) --- */
+        /* --- INTERACTIVE TERMINAL SECTION --- */
+        .terminal-container {
+            width: 90%;
+            max-width: 800px;
+            margin: 2rem auto;
+            background: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            overflow: hidden;
+            font-family: 'Fira Code', monospace;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .dot { width: 12px; height: 12px; border-radius: 50%; }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+        .terminal-title { margin-left: 10px; color: #999; font-size: 0.8rem; }
+
+        .terminal-body {
+            padding: 20px;
+            height: 300px;
+            overflow-y: auto;
+            color: #d4d4d4;
+            font-size: 0.9rem;
+        }
+
+        /* Custom Scrollbar for terminal */
+        .terminal-body::-webkit-scrollbar { width: 8px; }
+        .terminal-body::-webkit-scrollbar-track { background: #1e1e1e; }
+        .terminal-body::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+
+        .command-line { display: flex; flex-wrap: wrap; }
+        .prompt { color: #81c784; margin-right: 10px; font-weight: bold; }
+        .directory { color: #4db6ac; font-weight: bold; }
+        
+        /* The actual input area */
+        #cmd-input {
+            background: transparent;
+            border: none;
+            color: #d4d4d4;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.9rem;
+            outline: none;
+            flex-grow: 1;
+            caret-color: #4db6ac;
+        }
+
+        .output { color: #cecece; margin-bottom: 10px; white-space: pre-wrap; line-height: 1.4; }
+        .success { color: #81c784; }
+        .error { color: #ff5f56; }
+        .info { color: #61afef; }
+
+        /* --- Rest of Styles --- */
         .tab-content {
-            max-width: 600px;
-            margin: 1rem auto;
-            background: white;
-            border-radius: 8px;
-            padding: 1em;
-            box-shadow: 0 10px 8px rgba(0,0,0,0.05);
-            text-align: center;
+            max-width: 600px; margin: 1rem auto; background: white;
+            border-radius: 8px; padding: 1em; box-shadow: 0 10px 8px rgba(0,0,0,0.05); text-align: center;
         }
         .tab-content a, .tab-content button.copy-btn {
-            display: block;
-            margin: 0.8rem auto;
-            text-decoration: none;
-            color: var(--accent-color);
-            font-weight: bold;
-            width: fit-content;
+            display: block; margin: 0.8rem auto; text-decoration: none; color: var(--accent-color); font-weight: bold; width: fit-content;
         }
         .tab-content button.copy-btn {
-            background: var(--accent-color);
-            color: white;
-            border: none;
-            padding: 0.3rem 0.9rem;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
+            background: var(--accent-color); color: white; border: none; padding: 0.3rem 0.9rem;
+            border-radius: 4px; cursor: pointer; transition: background 0.2s;
         }
         .tab-content button.copy-btn:hover { background: var(--accent-hover); }
         
         .fade-in-out {
             margin: 0 auto; opacity: 0; max-height: 0; overflow: hidden;
-            transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out;
-            pointer-events: none;
+            transition: opacity 0.5s ease-in-out, max-height 0.5s ease-in-out; pointer-events: none;
         }
         .fade-in-out.visible { opacity: 1; max-height: 500px; pointer-events: auto; }
 
         section.about {
-            max-width: 800px;
-            margin: 3rem auto 1.5rem auto;
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 12px 8px rgba(0, 0, 0, 0.05);
-            text-align: center;
+            max-width: 800px; margin: 2rem auto; padding: 2rem; background: white;
+            border-radius: 12px; box-shadow: 0 12px 8px rgba(0, 0, 0, 0.05); text-align: center;
         }
 
         main {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
+            max-width: 1000px; margin: 2rem auto; padding: 0 1rem; display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;
         }
 
         .card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
-            padding: 1.5rem;
-            text-align: center;
-            transition: transform 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
+            background: white; border-radius: 12px; box-shadow: 0 15px 8px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem; text-align: center; transition: transform 0.2s ease;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between;
         }
         .card:hover { transform: translateY(-8px); }
         .card img { width: 50px; height: 50px; margin-bottom: 1rem; object-fit: contain; }
         .card h3 { margin: 0 0 0.5rem 0; }
         .card p { font-size: 0.9rem; color: #666; margin-bottom: 1.5rem; }
         .card button {
-            padding: 0.5rem 1rem; background-color: var(--accent-color);
-            border: none; border-radius: 8px; color: white;
-            cursor: pointer; font-weight: bold; transition: background-color 0.2s;
+            padding: 0.5rem 1rem; background-color: var(--accent-color); border: none;
+            border-radius: 8px; color: white; cursor: pointer; font-weight: bold; transition: background-color 0.2s;
         }
         .card button:hover { background-color: var(--accent-hover); }
 
         .infra-map {
             background: white; border-radius: 12px; box-shadow: 0 15px 8px #0000000d;
             max-width: 750px; margin: 0 auto; overflow: hidden;
-            max-height: 0; opacity: 0;
-            transition: max-height 0.6s ease, opacity 0.6s ease, margin-top 0.6s ease;
+            max-height: 0; opacity: 0; transition: max-height 0.6s ease, opacity 0.6s ease, margin-top 0.6s ease;
         }
         .infra-map.visible { max-height: 1100px; opacity: 1; margin-top: 1rem; margin-bottom: 2rem; }
         .infra-frame { position: relative; }
@@ -208,12 +197,9 @@
 
     <header>
         <canvas id="network-canvas"></canvas>
-        
         <div class="header-content">
             <h1>Simeon's Portfolio Hub</h1>
-            <p>
-                <span id="typewriter-text"></span><span class="cursor">&nbsp;</span>
-            </p>
+            <p><span id="typewriter-text"></span><span class="cursor-blink">&nbsp;</span></p>
         </div>
     </header>
 
@@ -225,22 +211,35 @@
     <div id="contact" class="tab-content fade-in-out">
         <a href="mailto:xXSAPXx@proton.me">Email: xXSAPXx@proton.me</a>
         <button class="copy-btn" data-copy="xXSAPXx@proton.me">Copy Email</button>
-        
         <a href="https://www.linkedin.com/in/simeon-asenov-petkov/" target="_blank">LinkedIn Profile</a>
         <button class="copy-btn" data-copy="https://www.linkedin.com/in/simeon-asenov-petkov/">Copy LinkedIn</button>
     </div>
 
+    <div class="terminal-container" onclick="document.getElementById('cmd-input').focus()">
+        <div class="terminal-header">
+            <div class="dot red"></div>
+            <div class="dot yellow"></div>
+            <div class="dot green"></div>
+            <span class="terminal-title">guest@xXSAPXx-portfolio:~</span>
+        </div>
+        <div class="terminal-body" id="terminal-body">
+            <div class="output">Welcome to xXSAPXx Interactive Shell v1.0</div>
+            <div class="output">Type <span class="info">'help'</span> to see available commands.</div>
+            <br>
+            
+            <div class="command-line">
+                <span class="prompt">guest@xXSAPXx</span>
+                <span class="directory">~</span>
+                <span class="prompt">$</span>
+                <input type="text" id="cmd-input" autocomplete="off" spellcheck="false">
+            </div>
+        </div>
+    </div>
+
     <section class="about">
-        <p>
-            I discovered my passion for technology during my 4th year at pharmacy university and not long after... my tech journey began!
-        </p>
-        <p>
-            My career started as a Database Administrator, and over time I developed a strong interest in DevOps tools, 
-            working on projects that combined both database expertise and modern automation practices.
-        </p>
-        <p>
-            <strong>Passionate About:</strong> ● Databases 💾 | ● Linux 🐧 | ● Cloud ☁️ | ● DevOps 🎯 |  ● Containers 🐳
-        </p>
+        <p>I discovered my passion for technology during my 4th year at pharmacy university and not long after... my tech journey began!</p>
+        <p>My career started as a Database Administrator, and over time I developed a strong interest in DevOps tools, working on projects that combined both database expertise and modern automation practices.</p>
+        <p><strong>Passionate About:</strong> ● Databases 💾 | ● Linux 🐧 | ● Cloud ☁️ | ● DevOps 🎯 |  ● Containers 🐳</p>
     </section>
 
     <main>
@@ -271,181 +270,254 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            
-            // --- 1. Typewriter Effect ---
-            const textElement = document.getElementById('typewriter-text');
-            const phrases = [
-                "Master of Pharmacy...",
-                "...turned DBA 💾",
-                "...turned DevOps 🚀"
-            ];
-            let phraseIndex = 0;
-            let charIndex = 0;
-            let isDeleting = false;
-            let typeSpeed = 100;
+            initNetworkCanvas();
+            initTypewriter();
+            initButtons();
+            initTerminal(); 
+        });
 
-            function typeWriter() {
-                const currentPhrase = phrases[phraseIndex];
+        // --- TERMINAL LOGIC ---
+        function initTerminal() {
+            const input = document.getElementById('cmd-input');
+            const terminalBody = document.getElementById('terminal-body');
+            const commandLine = document.querySelector('.command-line');
+            
+            // Command History Logic
+            let commandHistory = [];
+            let historyIndex = -1;
+
+            // Virtual File System
+            const fileSystem = {
+                'about.txt': "Master of Pharmacy turned DevOps Engineer.\nLoves Linux, Containers, and Databases.",
+                'skills.md': "- Linux 🐧\n- Docker 🐳\n- Kubernetes ☸️\n- SQL 💾\n- AWS ☁️",
+                'contact.info': "Email: xXSAPXx@proton.me\nGitHub: github.com/xXSAPXx",
+                'secret.txt': "You found the easter egg! 🥚\nThe password is 'admin123' (just kidding)."
+            };
+
+            const commands = {
+                'help': () => `Available commands:
+  <span class="info">ls</span>        List directory contents
+  <span class="info">ll</span>        List directory contents (long format alias)
+  <span class="info">cat [file]</span> Display file content
+  <span class="info">echo [txt]</span> Print text to stdout
+  <span class="info">pwd</span>       Print working directory
+  <span class="info">whoami</span>    Print effective userid
+  <span class="info">date</span>      Display current date/time
+  <span class="info">clear</span>     Clear terminal screen
+  <span class="info">sudo</span>      Execute a command as another user`,
                 
-                if (isDeleting) {
-                    textElement.textContent = currentPhrase.substring(0, charIndex - 1);
-                    charIndex--;
-                    typeSpeed = 50; // Delete faster
-                } else {
-                    textElement.textContent = currentPhrase.substring(0, charIndex + 1);
-                    charIndex++;
-                    typeSpeed = 100; // Type normal speed
-                }
+                'ls': () => Object.keys(fileSystem).map(f => `<span class="info">${f}</span>`).join('&nbsp;&nbsp;&nbsp;'),
+                
+                'll': () => Object.keys(fileSystem).map(f => `<span class="info">${f}</span>`).join('&nbsp;&nbsp;&nbsp;'),
 
-                if (!isDeleting && charIndex === currentPhrase.length) {
-                    // Finished typing phrase
-                    isDeleting = true;
-                    typeSpeed = 2000; // Pause at end
-                    
-                    // If it's the last phrase, stop deleting to keep it there
-                    if(phraseIndex === phrases.length - 1) {
-                        isDeleting = false;
-                        return; // Stop animation
+                'pwd': () => '/home/guest',
+                
+                'whoami': () => 'guest',
+                
+                'date': () => new Date().toString(),
+                
+                'echo': (args) => args.join(' '),
+
+                'sudo': () => `<span class="error">guest is not in the sudoers file. This incident will be reported.</span> 😈`,
+
+                'cat': (args) => {
+                    if (!args[0]) return '<span class="error">Usage: cat [filename]</span>';
+                    const file = args[0];
+                    if (fileSystem[file]) return fileSystem[file];
+                    return `<span class="error">cat: ${file}: No such file or directory</span>`;
+                }
+            };
+
+            // Auto-run a command for visual effect on load
+            setTimeout(() => {
+                typeCommand('ls', 1000);
+            }, 1500);
+
+            function typeCommand(cmd, delay) {
+                let i = 0;
+                const interval = setInterval(() => {
+                    input.value += cmd.charAt(i);
+                    i++;
+                    if (i >= cmd.length) {
+                        clearInterval(interval);
+                        setTimeout(() => {
+                            executeCommand(cmd);
+                            input.value = '';
+                        }, 300);
                     }
+                }, 100);
+            }
 
-                } else if (isDeleting && charIndex === 0) {
-                    // Finished deleting
-                    isDeleting = false;
-                    phraseIndex++;
-                    typeSpeed = 500;
+            input.addEventListener('keydown', function(e) {
+                // ENTER KEY
+                if (e.key === 'Enter') {
+                    const commandRaw = this.value.trim();
+                    
+                    if (commandRaw) {
+                        // Save to history
+                        commandHistory.push(commandRaw);
+                        historyIndex = commandHistory.length;
+                        executeCommand(commandRaw);
+                    } else {
+                        // Just print a new line
+                        const logEntry = document.createElement('div');
+                        logEntry.innerHTML = `
+                            <span class="prompt">guest@xXSAPXx</span>
+                            <span class="directory">~</span>
+                            <span class="prompt">$</span>
+                        `;
+                        terminalBody.insertBefore(logEntry, commandLine);
+                        terminalBody.scrollTop = terminalBody.scrollHeight;
+                    }
+                    this.value = '';
+                }
+                
+                // UP ARROW (History Back)
+                else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (historyIndex > 0) {
+                        historyIndex--;
+                        this.value = commandHistory[historyIndex];
+                    } else if (historyIndex === 0) {
+                         this.value = commandHistory[0];
+                    }
+                }
+                
+                // DOWN ARROW (History Forward)
+                else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (historyIndex < commandHistory.length - 1) {
+                        historyIndex++;
+                        this.value = commandHistory[historyIndex];
+                    } else {
+                        historyIndex = commandHistory.length;
+                        this.value = '';
+                    }
+                }
+            });
+
+            function executeCommand(raw) {
+                const parts = raw.split(' ');
+                const cmd = parts[0].toLowerCase();
+                const args = parts.slice(1);
+
+                // Create Log Entry
+                const logEntry = document.createElement('div');
+                logEntry.innerHTML = `
+                    <span class="prompt">guest@xXSAPXx</span>
+                    <span class="directory">~</span>
+                    <span class="prompt">$</span> ${raw}
+                `;
+                terminalBody.insertBefore(logEntry, commandLine);
+
+                // Process Command
+                if (cmd === 'clear') {
+                    while(terminalBody.firstChild && terminalBody.firstChild !== commandLine) {
+                        terminalBody.removeChild(terminalBody.firstChild);
+                    }
+                    return;
                 }
 
-                setTimeout(typeWriter, typeSpeed);
+                const outputDiv = document.createElement('div');
+                outputDiv.className = 'output';
+
+                if (commands[cmd]) {
+                    outputDiv.innerHTML = commands[cmd](args);
+                } else {
+                    outputDiv.innerHTML = `<span class="error">bash: ${cmd}: command not found</span>`;
+                }
+
+                terminalBody.insertBefore(outputDiv, commandLine);
+                terminalBody.scrollTop = terminalBody.scrollHeight;
             }
-            
-            // Start typing
-            typeWriter();
+        }
 
-
-            // --- 2. Particle Network Animation (Canvas) ---
+        // --- EXISTING HELPER FUNCTIONS ---
+        function initNetworkCanvas() {
             const canvas = document.getElementById('network-canvas');
             const ctx = canvas.getContext('2d');
             let particles = [];
-            
-            function resizeCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = canvas.parentElement.offsetHeight;
-            }
-            window.addEventListener('resize', resizeCanvas);
-            resizeCanvas();
-
+            function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = canvas.parentElement.offsetHeight; }
+            window.addEventListener('resize', resizeCanvas); resizeCanvas();
             class Particle {
                 constructor() {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
-                    this.size = Math.random() * 2 + 1;
-                    this.speedX = Math.random() * 1 - 0.5;
-                    this.speedY = Math.random() * 1 - 0.5;
+                    this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 2 + 1; this.speedX = Math.random() * 1 - 0.5; this.speedY = Math.random() * 1 - 0.5;
                 }
                 update() {
-                    this.x += this.speedX;
-                    this.y += this.speedY;
-                    if (this.x > canvas.width) this.x = 0;
-                    if (this.x < 0) this.x = canvas.width;
-                    if (this.y > canvas.height) this.y = 0;
-                    if (this.y < 0) this.y = canvas.height;
+                    this.x += this.speedX; this.y += this.speedY;
+                    if (this.x > canvas.width) this.x = 0; if (this.x < 0) this.x = canvas.width;
+                    if (this.y > canvas.height) this.y = 0; if (this.y < 0) this.y = canvas.height;
                 }
                 draw() {
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                    ctx.fill();
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)'; ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill();
                 }
             }
-
             function initParticles() {
-                particles = [];
-                const numberOfParticles = Math.floor(canvas.width / 15); // Density
-                for (let i = 0; i < numberOfParticles; i++) {
-                    particles.push(new Particle());
-                }
+                particles = []; const count = Math.floor(canvas.width / 15);
+                for (let i = 0; i < count; i++) particles.push(new Particle());
             }
-
             function animateParticles() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                for (let i = 0; i < particles.length; i++) {
-                    particles[i].update();
-                    particles[i].draw();
-                    
-                    // Draw connections
+                particles.forEach((p, i) => {
+                    p.update(); p.draw();
                     for (let j = i; j < particles.length; j++) {
-                        const dx = particles[i].x - particles[j].x;
-                        const dy = particles[i].y - particles[j].y;
-                        const distance = Math.sqrt(dx * dx + dy * dy);
-                        if (distance < 100) {
-                            ctx.beginPath();
-                            ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 - distance/500})`;
-                            ctx.lineWidth = 0.5;
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.stroke();
+                        const dx = p.x - particles[j].x; const dy = p.y - particles[j].y; const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 100) {
+                            ctx.beginPath(); ctx.strokeStyle = `rgba(255, 255, 255, ${0.2 - dist/500})`;
+                            ctx.lineWidth = 0.5; ctx.moveTo(p.x, p.y); ctx.lineTo(particles[j].x, particles[j].y); ctx.stroke();
                         }
                     }
-                }
+                });
                 requestAnimationFrame(animateParticles);
             }
+            initParticles(); animateParticles();
+        }
 
-            initParticles();
-            animateParticles();
+        function initTypewriter() {
+            const textElement = document.getElementById('typewriter-text');
+            const phrases = ["Master of Pharmacy...", "...turned DBA", "...turned DevOps Engineer 🚀"];
+            let phraseIndex = 0, charIndex = 0, isDeleting = false, typeSpeed = 100;
+            function type() {
+                const current = phrases[phraseIndex];
+                if (isDeleting) { textElement.textContent = current.substring(0, charIndex - 1); charIndex--; typeSpeed = 50; } 
+                else { textElement.textContent = current.substring(0, charIndex + 1); charIndex++; typeSpeed = 100; }
+                if (!isDeleting && charIndex === current.length) {
+                    isDeleting = true; typeSpeed = 2000;
+                    if(phraseIndex === phrases.length - 1) { isDeleting = false; return; }
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false; phraseIndex++; typeSpeed = 500;
+                }
+                setTimeout(type, typeSpeed);
+            }
+            type();
+        }
 
-
-            // --- 3. Existing Logic (Buttons) ---
-            document.getElementById('btn-github').addEventListener('click', () => {
-                window.open('https://github.com/xXSAPXx', '_blank');
-            });
-
+        function initButtons() {
+            document.getElementById('btn-github').addEventListener('click', () => window.open('https://github.com/xXSAPXx', '_blank'));
             const contactBtn = document.getElementById('btn-toggle-contacts');
             contactBtn.addEventListener('click', () => toggleContacts(contactBtn));
-
             const mapBtn = document.getElementById('btn-toggle-map');
             mapBtn.addEventListener('click', () => toggleMap(mapBtn));
-
-            document.querySelectorAll('.copy-btn').forEach(btn => {
-                btn.addEventListener('click', () => copyText(btn.getAttribute('data-copy')));
-            });
-        });
-
-        // Helper functions
-        function toggleContacts(button) {
-            const tab = document.getElementById('contact');
-            const isVisible = tab.classList.toggle('visible');
-            button.textContent = isVisible ? 'Hide Contacts 🌐' : 'Show Contacts 🌐';
-            button.setAttribute('aria-expanded', isVisible);
+            document.querySelectorAll('.copy-btn').forEach(btn => btn.addEventListener('click', () => copyText(btn.getAttribute('data-copy'))));
         }
-
-        function toggleMap(button) {
-            const map = document.getElementById('infra-map');
-            const isVisible = map.classList.toggle('visible');
-            button.textContent = isVisible ? 'Hide Map' : 'View Map';
-            button.setAttribute('aria-expanded', isVisible);
+        function toggleContacts(btn) {
+            const tab = document.getElementById('contact'); const isVisible = tab.classList.toggle('visible');
+            btn.textContent = isVisible ? 'Hide Contacts 🌐' : 'Show Contacts 🌐'; btn.setAttribute('aria-expanded', isVisible);
         }
-
+        function toggleMap(btn) {
+            const map = document.getElementById('infra-map'); const isVisible = map.classList.toggle('visible');
+            btn.textContent = isVisible ? 'Hide Map' : 'View Map'; btn.setAttribute('aria-expanded', isVisible);
+        }
         async function copyText(text) {
-            try {
-                await navigator.clipboard.writeText(text);
-                showMessageBox('Copied: ' + text);
-            } catch (err) { showMessageBox('Error copying text'); }
+            try { await navigator.clipboard.writeText(text); showMessageBox('Copied: ' + text); } catch (err) { showMessageBox('Error copying text'); }
         }
-
-        function showMessageBox(message) {
+        function showMessageBox(msgText) {
             const msg = document.createElement('div');
-            Object.assign(msg.style, {
-                position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                padding: '20px', background: 'rgba(0,0,0,0.8)', color: 'white', borderRadius: '10px',
-                zIndex: '2000', opacity: '0', transition: 'opacity 0.3s'
-            });
-            msg.textContent = message;
-            document.body.appendChild(msg);
-            setTimeout(() => msg.style.opacity = '1', 10);
-            setTimeout(() => {
-                msg.style.opacity = '0';
-                setTimeout(() => msg.remove(), 300);
-            }, 2000);
+            Object.assign(msg.style, { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', padding: '20px', background: 'rgba(0,0,0,0.8)', color: 'white', borderRadius: '10px', zIndex: '2000', opacity: '0', transition: 'opacity 0.3s' });
+            msg.textContent = msgText; document.body.appendChild(msg);
+            setTimeout(() => msg.style.opacity = '1', 10); setTimeout(() => { msg.style.opacity = '0'; setTimeout(() => msg.remove(), 300); }, 2000);
         }
     </script>
 </body>
