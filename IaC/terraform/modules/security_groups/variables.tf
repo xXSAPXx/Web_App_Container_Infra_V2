@@ -36,9 +36,9 @@ variable "sec_group_name" {
 }
 
 variable "sec_group_description" {
-  description = "Allow SSH and Prometheus and Node_Exporter Ports"
+  description = "Allow SSH for the bastion jump host"
   type        = string
-  default     = "Allow SSH and Prometheus and Node_Exporter Ports"
+  default     = "Allow SSH access for the bastion jump host"
 }
 
 variable "bastion_host_cidr_block" {
@@ -69,22 +69,17 @@ variable "alb_security_group_name" {
 }
 
 ##############################################
-# ASG (Web_Servers) SEC_GROUP VARIABLES:
+# EKS NODE SEC_GROUP VARIABLES:
 ##############################################
 
 variable "asg_sec_group_cidr_block" {
   type        = string
-  description = "CIDR block used for ingress and egress for the Web_Servers."
+  description = "CIDR block used for ICMP ingress to the EKS node security group (e.g. bastion connectivity checks)."
   default     = "10.0.0.0/24"
-}
-
-variable "bastion_host_sec_group" {
-  type        = list(string)
-  description = "Only this SEC_Group will be allowed to connect to the WEB_SERVERS in the ASG."
 }
 
 variable "asg_security_group_name" {
   type        = string
-  description = "ASG Sec_Group Name."
-  default     = "asg_servers_sg"
+  description = "EKS node Sec_Group Name."
+  default     = "eks_node_sg"
 }

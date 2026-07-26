@@ -1,6 +1,6 @@
 
-# Create a file named terraform.tfvars (Ignored in .gitignore) in /terraform direcroy in your local repo with the needed TF variables: 
-# TF_VARS: 
+# Create a file named terraform.tfvars (Ignored in .gitignore) in /terraform direcroy in your local repo with the needed TF variables:
+# TF_VARS:
 
 # Cloudflare Variables:
 cloudflare_api_token       = <EXAMPLE>
@@ -10,6 +10,6 @@ cloudflare_domain_name     = <EXAMPLE>
 # Key pair for the EC2 instances
 aws_key_pair               = <EXAMPLE>
 
-# Where Prometheus will push the metrics:
-prometheus_grafana_user    = <EXAMPLE>
-prometheus_grafana_api_key = <EXAMPLE>
+# DNS name of the AWS Load Balancer Controller's ALB, once you have it (leave
+# unset on the first apply - see the comment on this variable in variables.tf):
+# app_alb_dns_name          = <EXAMPLE>.us-east-1.elb.amazonaws.com

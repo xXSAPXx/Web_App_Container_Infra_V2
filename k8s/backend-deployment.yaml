@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: calc-app
+  labels:
+    app: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+        - name: backend
+          # Replace with the value of `terraform output ecr_backend_repository_url`,
+          # after you've built and pushed the image (see backend/Dockerfile).
+          image: "REPLACE_WITH_ECR_BACKEND_REPOSITORY_URL:latest"
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-db-secret
+          # server.js calls process.exit(1) if it can't reach the DB on boot,
+          # so a pod that can't reach RDS will crash-loop until it can - that's
+          # expected/fine, Kubernetes just keeps restarting it.
+          readinessProbe:
+            httpGet:
+              path: /backend
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /backend
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 250m
+              memory: 256Mi

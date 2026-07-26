@@ -39,6 +39,18 @@ output "private_subnet_2_id" {
 }
 
 
+output "public_subnet_ids" {
+  description = "All public subnet IDs, for the EKS cluster and ALB Ingress."
+  value       = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
+}
+
+
+output "private_subnet_ids" {
+  description = "All private subnet IDs, for the EKS node group."
+  value       = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+}
+
+
 output "rds_subnet_group_name" {
   description = "The name of the RDS DB Subnet Group."
   value       = aws_db_subnet_group.mydb_subnet_group.name

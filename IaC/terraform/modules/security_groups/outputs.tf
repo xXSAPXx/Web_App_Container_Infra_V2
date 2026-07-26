@@ -14,7 +14,7 @@ output "alb_security_group_id" {
   value       = aws_security_group.alb_security_group.id
 }
 
-output "asg_security_group_id" {
-  description = "The ID of the ASG security group"
-  value       = aws_security_group.web_servers_sg.id
+output "eks_node_security_group_id" {
+  description = "The ID of the EKS node security group"
+  value       = aws_security_group.eks_node_sg.id
 }

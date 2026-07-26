@@ -3,7 +3,7 @@
 variable "vpc_cidr_block" {
   description = "The CIDR block for the VPC."
   type        = string
-  default     = "10.0.0.0/24"
+  default     = "10.0.0.0/16"
 }
 
 
@@ -24,28 +24,28 @@ variable "internet_gateway_name" {
 variable "public_subnet_1_cidr" {
   description = "A list of CIDR blocks for the public subnets."
   type        = string
-  default     = "10.0.0.0/28"
+  default     = "10.0.0.0/20"
 }
 
 
 variable "public_subnet_2_cidr" {
   description = "A list of CIDR blocks for the public subnets."
   type        = string
-  default     = "10.0.0.16/28"
+  default     = "10.0.16.0/20"
 }
 
 
 variable "private_subnet_1_cidr" {
   description = "A list of CIDR blocks for the private subnets."
   type        = string
-  default     = "10.0.0.32/28"
+  default     = "10.0.32.0/19"
 }
 
 
 variable "private_subnet_2_cidr" {
   description = "A list of CIDR blocks for the private subnets."
   type        = string
-  default     = "10.0.0.48/28"
+  default     = "10.0.64.0/19"
 }
 
 
@@ -86,4 +86,11 @@ variable "private_zone_name" {
   description = "The name of the private Route53 zone."
   type        = string
   default     = "internal.xxsapxx.local"
+}
+
+
+variable "eks_cluster_name" {
+  description = "Name of the EKS cluster, used for the kubernetes.io/cluster/<name> subnet discovery tag required by the EKS control plane and the AWS Load Balancer Controller."
+  type        = string
+  default     = "app-eks-cluster"
 }

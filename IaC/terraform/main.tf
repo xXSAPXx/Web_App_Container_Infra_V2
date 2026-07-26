@@ -1,6 +1,7 @@
 
 
 
+
 #################################################################################################################################
 ######################################## CLOUDFLARE PROVIDER VARIABLES ##########################################################
 
@@ -11,16 +12,22 @@ provider "cloudflare" {
 
 
 # Create a Cloudflare DNS record to the ALB CNAME or IP - [SSL cert validation is handled in module alb_cert_validation]
+# NOTE: the ALB itself is now provisioned dynamically by the AWS Load Balancer
+# Controller (from the k8s/ingress.yaml Ingress resource), not by Terraform.
+# So this module only creates/updates once you have that ALB's DNS name -
+# apply `kubectl apply -f k8s/` first, read the hostname with
+# `kubectl get ingress`, then re-run `terraform apply -var="app_alb_dns_name=<hostname>"`.
 module "cloudflare_dns" {
   source = "./modules/cloudflare"
+  count  = var.app_alb_dns_name != "" ? 1 : 0
 
   # --- Cloudflare Variables for the Module ---
   cloudflare_api_token = var.cloudflare_api_token
   cloudflare_zone_id   = var.cloudflare_zone_id
   select_domain_name   = var.cloudflare_domain_name
-  alb_dns_name         = module.alb.alb_dns_name
+  alb_dns_name         = var.app_alb_dns_name
 
-  # --- Cloudflare_WWW_DNS_Record Settings ---  
+  # --- Cloudflare_WWW_DNS_Record Settings ---
   comment         = "Domain pointed to AWS_ALB"
   sub_domain_name = "www"
   dns_record_type = "CNAME"
@@ -50,9 +57,8 @@ module "cloudflare_dns" {
   # Enable HSTS (Strict-Transport-Security) in Cloudflare: (NOT AVAILABLE IN TERRAFORM)
 
 
-  # Use Rate Limiting Rules for DDoS Protection: 
+  # Use Rate Limiting Rules for DDoS Protection:
 }
-
 
 
 
@@ -60,13 +66,21 @@ module "cloudflare_dns" {
 ####################################################################################################################################
 ######################################## AWS PROVIDER VARIABLES ####################################################################
 
-# AWS provider region: 
+# AWS provider region:
 provider "aws" {
   region = "us-east-1" # Or use a variable if you prefer
 }
 
+data "aws_caller_identity" "current" {}
 
-# Networking: 
+# Shared cluster name - passed to both the VPC module (subnet discovery tags)
+# and the EKS module (the cluster itself), so they can't drift apart.
+locals {
+  eks_cluster_name = "app-eks-cluster"
+}
+
+
+# Networking:
 # Crate VPC / Subnets / Nat_Gateway / RDS_Subnet_Group /Routing / Route53_Private_Zone
 ######################################################################################
 
@@ -75,7 +89,7 @@ module "vpc" {
 
   # --- General VPC Settings ---
   vpc_name              = "App_VPC_IaC"
-  vpc_cidr_block        = "10.0.0.0/24"
+  vpc_cidr_block        = "10.0.0.0/16"
   internet_gateway_name = "Internet_Gateway_IaC"
 
   # --- Availability Zone Settings ---
@@ -83,10 +97,10 @@ module "vpc" {
   availability_zone_2 = "us-east-1b"
 
   # --- Subnet CIDR Block Settings ---
-  public_subnet_1_cidr  = "10.0.0.0/28"
-  public_subnet_2_cidr  = "10.0.0.16/28"
-  private_subnet_1_cidr = "10.0.0.32/28"
-  private_subnet_2_cidr = "10.0.0.48/28"
+  public_subnet_1_cidr  = "10.0.0.0/20"
+  public_subnet_2_cidr  = "10.0.16.0/20"
+  private_subnet_1_cidr = "10.0.32.0/19"
+  private_subnet_2_cidr = "10.0.64.0/19"
 
   # --- NAT_Gateway Settings ---
   nat_gateway_public_subnet_id = 1
@@ -96,12 +110,15 @@ module "vpc" {
 
   # --- Route 53 Settings ---
   private_zone_name = "internal.xxsapxx.local"
+
+  # --- EKS Subnet Discovery Tag Settings ---
+  eks_cluster_name = local.eks_cluster_name
 }
 
 
 
 
-# Create ALL Security Groups: 
+# Create ALL Security Groups:
 ######################################################################################
 
 module "security_groups" {
@@ -111,29 +128,28 @@ module "security_groups" {
   vpc_id = module.vpc.vpc_id
 
   # -------- RDS Sec_Group Settings --------
-  rds_cidr_block          = "10.0.0.0/24"
+  rds_cidr_block          = "10.0.0.0/16" # RDS stays reachable from anywhere in the VPC (incl. the bastion) for DB testing.
   rds_security_group_name = "RDS_SG_IaC"
 
-  # --- Bastion_Prometheus_Host Sec_Group Settings ---
+  # --- Bastion Sec_Group Settings ---
   bastion_host_cidr_block = "0.0.0.0/0"
-  sec_group_name          = "bastion_prometheus_sg"
-  sec_group_description   = "Allow SSH and Prometheus and Node_Exporter Ports"
+  sec_group_name          = "bastion_sg"
+  sec_group_description   = "Allow SSH access for the bastion jump host"
   vpc_cidr_block          = module.vpc.vpc_cidr_block # Used for ICMP (Ping) from inside the VPC.
 
   # --- ALB Sec_Group Settings ---
-  alb_sec_group_cidr_block = "0.0.0.0/0" # Public ALB Allows HTTP / HTTPS 
+  alb_sec_group_cidr_block = "0.0.0.0/0" # Public ALB Allows HTTP / HTTPS
   alb_security_group_name  = "alb_security_group"
 
-  # --- Web_Servers Sec_Group Settings ---     
-  asg_sec_group_cidr_block = "10.0.0.0/24"
-  bastion_host_sec_group   = [module.security_groups.bastion_host_security_group_id] # Only the BASTION_Sec_Group can SSH the WEB_SERVERS! 
-  asg_security_group_name  = "asg_servers_sg"
+  # --- EKS Node Sec_Group Settings ---
+  asg_sec_group_cidr_block = "10.0.0.0/16"
+  asg_security_group_name  = "eks_node_sg"
 }
 
 
 
 
-# Create All IAM Policies / Roles and IAM Instance Profiles: 
+# Create All IAM Policies / Roles and IAM Instance Profiles:
 ######################################################################################
 
 module "iam" {
@@ -172,7 +188,7 @@ module "database" {
   rds_security_group_ids = [module.security_groups.rds_security_group_id]
   rds_subnet_group_name  = module.vpc.rds_subnet_group_name
 
-  rds_snapshot_identifier = "calculator-app-rds-final-snapshot-iac" # Replace with your snapshot ID from which you want the DB to be created 
+  rds_snapshot_identifier = "calculator-app-rds-final-snapshot-iac" # Replace with your snapshot ID from which you want the DB to be created
   maintenance_window      = "mon:19:00-mon:19:30"
 
   # Prevent deletion of the database
@@ -183,113 +199,33 @@ module "database" {
 
 
 
-# Create and EC2: (Bastion / Prometheus Host)
+# Create an EC2: (Bastion jump host - SSH + DB connectivity testing)
 ######################################################################################
 module "bastion_prometheus" {
   source = "./modules/bastion_prometheus_host"
 
-  # --- Pass PRIVATE_DNS_ZONE to Bastion_Prometheus_Host User_Data_Script: ---
+  # --- Pass PRIVATE_DNS_ZONE to Bastion_Host User_Data_Script: ---
   private_dns_zone_id = module.vpc.private_dns_zone_id
 
-  # --- Pass grafana_user and grafana_api_key to Bastion_Host User_Data_Script: ---
-  prometheus_grafana_user    = var.prometheus_grafana_user
-  prometheus_grafana_api_key = var.prometheus_grafana_api_key
-
-  # --- Bastion_Prometheus_Host Settings ---
+  # --- Bastion Host Settings ---
   ami_id                = "ami-0583d8c7a9c35822c"
   instance_type         = "t2.micro"
   subnet_id             = module.vpc.public_subnet_2_id
   bastion_sec_group_ids = [module.security_groups.bastion_host_security_group_id]
   key_name              = var.aws_key_pair
-  iam_instance_profile  = module.iam.prometheus_server_instance_profile_name
+  iam_instance_profile  = module.iam.bastion_instance_profile_name
 
   # EBS Volume Settings:
   volume_size = 10
   volume_type = "gp2"
 
-  bastion_host_tag_name = "bastion-prometheus-host"
+  bastion_host_tag_name = "bastion-host"
 }
 
 
 
 
-# Create Frontend/Backend - Target Groups / ALB / ALB_Listeners / ALB Rules 
-######################################################################################
-module "alb" {
-  source = "./modules/alb"
-
-
-  # --- Target Groups Settings (Frontend / Backend) ---
-  vpc_id = module.vpc.vpc_id
-
-  # ----------- Frontend TG -----------
-  frontend_tg_name     = "frontend-tg"
-  frontend_tg_port     = 80
-  frontend_tg_protocol = "HTTP"
-
-  # Health_Check:
-  frontend_tg_path                = "/" # Path to your health_check.html file OR "/" FOR GENERIC ROOT_PATH HEALTH_CHECK
-  frontend_tg_interval            = 30
-  frontend_tg_timeout             = 5
-  frontend_tg_healthy_threshold   = 2
-  frontend_tg_unhealthy_threshold = 2
-  frontend_tg_matcher             = "200"
-
-  frontend_tg_tag_name = "FrontendTargetGroup"
-
-
-  # ----------- Backend TG ----------- 
-  backend_tg_name     = "backend-tg"
-  backend_tg_port     = 3000
-  backend_tg_protocol = "HTTP"
-
-  # Health_Check:
-  backend_tg_path                = "/backend"
-  backend_tg_interval            = 30
-  backend_tg_timeout             = 5
-  backend_tg_healthy_threshold   = 2
-  backend_tg_unhealthy_threshold = 2
-  backend_tg_matcher             = "200"
-
-  backend_tg_tag_name = "BackendTargetGroup"
-
-
-  # ----------- ALB Configuration Settings -----------
-  alb_name                       = "alb-web-servers-asg"
-  alb_subnets                    = [module.vpc.public_subnet_1_id, module.vpc.public_subnet_2_id] # We need 2 Subnets for the ALB to work
-  alb_security_groups            = [module.security_groups.alb_security_group_id]
-  alb_load_balancer_type         = "application"
-  alb_internal                   = false
-  alb_enable_deletion_protection = false
-
-  alb_tag_name = "asg-web-servers-alb"
-
-
-  # ----------- ALB Listeners Configuration Settings -----------
-
-  # HTTP Listener: 
-  # Forwards All Taffic on port 80 to HTTPS(443) --> aws_lb_target_group.frontend_tg.arn
-  http_listener_port = 80
-  # Redirect to HTTPS: 
-  http_listener_redirect_protocol    = "HTTPS"
-  http_listener_redirect_port        = "443"
-  http_listener_redirect_status_code = "HTTP_301"
-
-
-  # HTTPS Listener: 
-  # Forwards All Taffic on port 443 to --> aws_lb_target_group.frontend_tg.arn
-  https_listener_port            = 443
-  https_listener_ssl_policy      = "ELBSecurityPolicy-2016-08"
-  https_listener_certificate_arn = module.alb_ssl_cert_validation.alb_certificate_arn
-
-  # ALB Rules for HTTPS Listener: 
-  # List of path patterns to forward to the backend_tg
-  backend_path_patterns = ["/api/*"]
-}
-
-
-
-# Create Amazon-issued TLS certificate for our domain: [Specifies DNS validation.] AND VALIDATE CERT! 
+# Create Amazon-issued TLS certificate for our domain: [Specifies DNS validation.] AND VALIDATE CERT!
 ########################################################################################################
 
 module "alb_ssl_cert_validation" {
@@ -302,38 +238,117 @@ module "alb_ssl_cert_validation" {
 
 
 
-# Create Containerized Application:  
-# Container Scaling Policies:
+
+# ECR Repositories for the frontend/backend app images:
+# These are NOT created here - they live in their own persistent state
+# (IaC/terraform-ecr/), applied once, so images survive every destroy/apply
+# cycle of this stack. This just looks up the existing repos by name.
 ########################################################################################################
-module "container_app" {
-  source = "./modules/container_app"
-  depends_on = [module.database]
 
-  # --- Pass DB_ENDPOINT and PRIVATE_DNS_ZONE to the Containers: ---
-  database_endpoint   = module.database.rds_endpoint
-  private_dns_zone_id = module.vpc.private_dns_zone_id
+data "aws_ecr_repository" "frontend" {
+  name = "calc-app-frontend"
+}
 
-  # --- Container App Settings ---
-
+data "aws_ecr_repository" "backend" {
+  name = "calc-app-backend"
 }
 
 
 
 
-# Print all dynamic variables passed to specified modules after terrafrom deployment: 
+# EKS Cluster (control plane, managed node group, OIDC/IRSA, ALB Controller IAM):
+########################################################################################################
+
+module "eks" {
+  source     = "./modules/eks"
+  depends_on = [module.vpc, module.security_groups]
+
+  cluster_name       = local.eks_cluster_name
+  vpc_id             = module.vpc.vpc_id
+  public_subnet_ids  = module.vpc.public_subnet_ids
+  private_subnet_ids = module.vpc.private_subnet_ids
+
+  eks_node_security_group_id = module.security_groups.eks_node_security_group_id
+  admin_principal_arn        = data.aws_caller_identity.current.arn
+}
+
+
+# Install the AWS Load Balancer Controller via Helm - this is the piece that
+# watches k8s/ingress.yaml and provisions the actual ALB in AWS.
+# Pin/verify chart `version` against the latest release before applying:
+# https://github.com/aws/eks-charts/releases
+resource "helm_release" "aws_load_balancer_controller" {
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  version    = "1.8.1"
+
+  set {
+    name  = "clusterName"
+    value = module.eks.cluster_name
+  }
+
+  set {
+    name  = "region"
+    value = "us-east-1"
+  }
+
+  set {
+    name  = "vpcId"
+    value = module.vpc.vpc_id
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.eks.alb_controller_irsa_role_arn
+  }
+
+  depends_on = [module.eks]
+}
+
+
+
+
+# Print all dynamic variables passed to specified modules after terrafrom deployment:
 # Usefull for debuging purposes.
-# This ensures the modules received the correct env variables. 
 ########################################################################################################
-
-output "private_dns_zone_id" {
-  value = module.container_app.private_dns_zone_debug
-}
-
-output "rds_endpoint_id" {
-  value = module.container_app.rds_endpoint_debug
-}
 
 output "bastion_host_public_ip" {
   value = module.bastion_prometheus.bastion_host_public_ip
 }
 
+output "rds_endpoint" {
+  value = module.database.rds_endpoint
+}
+
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "ecr_frontend_repository_url" {
+  value = data.aws_ecr_repository.frontend.repository_url
+}
+
+output "ecr_backend_repository_url" {
+  value = data.aws_ecr_repository.backend.repository_url
+}
+
+output "acm_certificate_arn" {
+  description = "Pass this into the alb.ingress.kubernetes.io/certificate-arn annotation on k8s/ingress.yaml"
+  value       = module.alb_ssl_cert_validation.alb_certificate_arn
+}

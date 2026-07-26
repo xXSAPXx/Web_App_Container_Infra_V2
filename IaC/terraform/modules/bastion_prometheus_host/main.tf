@@ -1,21 +1,18 @@
 
 ###################################################################################
-# Generate a new base64 encoded userdata script for the Bastion_Prometheus_Host.
-# With Added Dynamic Variables for prometheus_grafana_user / prometheus_grafana_api_key / private_dns_zone_id
-# This script must be passed to the Bastion_Prometheus_EC2 instance.
+# Generate a new base64 encoded userdata script for the Bastion_Host.
+# With the private_dns_zone_id dynamic variable for hostname self-registration.
 ###################################################################################
 
 locals {
   bastion_prometheus_host_userdata = templatefile("${path.module}/userdata_for_bastion_prometheus_host.tpl", {
-    private_dns_zone_id        = var.private_dns_zone_id
-    prometheus_grafana_user    = var.prometheus_grafana_user
-    prometheus_grafana_api_key = var.prometheus_grafana_api_key
+    private_dns_zone_id = var.private_dns_zone_id
   })
 }
 
 
 ########################################################################
-# Public EC2 - Jump_Host + Prometheus server:
+# Public EC2 - Bastion / Jump_Host (SSH + DB connectivity testing):
 ########################################################################
 
 resource "aws_instance" "bastion_prometheus" {

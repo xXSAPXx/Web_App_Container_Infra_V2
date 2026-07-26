@@ -22,7 +22,9 @@ resource "aws_subnet" "public_subnet_1" {
   availability_zone       = var.availability_zone_1 # Replace with your preferred AZ
   map_public_ip_on_launch = true                    # Enable this to auto-assign public IPs
   tags = {
-    Name = "Public_Subnet_1_IaC"
+    Name                                            = "Public_Subnet_1_IaC"
+    "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                        = "1"
   }
 }
 
@@ -34,7 +36,9 @@ resource "aws_subnet" "public_subnet_2" {
   availability_zone       = var.availability_zone_2  # Replace with another AZ in your preferred region
   map_public_ip_on_launch = true                     # Enable this to auto-assign public IPs
   tags = {
-    Name = "Public_Subnet_2_IaC"
+    Name                                            = "Public_Subnet_2_IaC"
+    "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
+    "kubernetes.io/role/elb"                        = "1"
   }
 }
 
@@ -80,7 +84,9 @@ resource "aws_subnet" "private_subnet_1" {
   availability_zone       = var.availability_zone_1   # Same AZ as the first public subnet
   map_public_ip_on_launch = false                     # DO NOT Auto-assign public IPs!
   tags = {
-    Name = "Private_Subnet_1_IaC"
+    Name                                            = "Private_Subnet_1_IaC"
+    "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"               = "1"
   }
 }
 
@@ -93,7 +99,9 @@ resource "aws_subnet" "private_subnet_2" {
   availability_zone       = var.availability_zone_2   # Same AZ as the second public subnet
   map_public_ip_on_launch = false                     # DO NOT Auto-assign public IPs!
   tags = {
-    Name = "Private_Subnet_2_IaC"
+    Name                                            = "Private_Subnet_2_IaC"
+    "kubernetes.io/cluster/${var.eks_cluster_name}" = "shared"
+    "kubernetes.io/role/internal-elb"               = "1"
   }
 }
 

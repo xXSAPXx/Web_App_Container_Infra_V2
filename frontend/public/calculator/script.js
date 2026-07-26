@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loginErrorDiv = document.getElementById('login-error');
     const registerErrorDiv = document.getElementById('register-error');
 
-    const API_BASE_URL = 'http://localhost'; // Frontend sends requests to this base URL
+    const API_BASE_URL = ''; // Relative to whatever origin served this page - works locally, via the raw ALB hostname, and via the final domain
 
     // --- View Switching Functions ---
     function showLoginView() {

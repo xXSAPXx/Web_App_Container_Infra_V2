@@ -10,23 +10,6 @@ variable "private_dns_zone_id" {
 
 
 ##########################################
-# Grafana Connect Variables: 
-##########################################
-
-variable "prometheus_grafana_user" {
-  type        = string
-  sensitive   = true
-  description = "Prometheus Grafana User"
-}
-
-variable "prometheus_grafana_api_key" {
-  type        = string
-  sensitive   = true
-  description = "Prometheus Grafana API Key"
-}
-
-
-##########################################
 # BASTION HOST VARIABLES 
 ##########################################
 
@@ -57,7 +40,7 @@ variable "key_name" {
 }
 
 variable "iam_instance_profile" {
-  description = "IAM Role for the Prometheus Automatic Service Discovery"
+  description = "IAM instance profile for the bastion host (used for private-DNS self-registration)"
   type        = string
 }
 
@@ -76,7 +59,7 @@ variable "volume_type" {
 variable "bastion_host_tag_name" {
   description = "Tags to apply to the EC2 instance"
   type        = string
-  default     = "Bastion-Prometheus-IaC"
+  default     = "Bastion-Host-IaC"
 }
 
 

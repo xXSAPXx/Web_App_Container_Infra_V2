@@ -27,7 +27,9 @@ resource "aws_security_group" "rds_sg" {
 
 
 ########################################################################
-# Security Group for the Public EC2 - Bastion + Prometheus server: 
+# Security Group for the Public EC2 - Bastion server (SSH / DB testing):
+# Prometheus-specific ports (9090/9100) were dropped along with the
+# Prometheus role - this box is now a plain jump host.
 ########################################################################
 
 resource "aws_security_group" "bastion_prometheus_sg" {
@@ -38,20 +40,6 @@ resource "aws_security_group" "bastion_prometheus_sg" {
   ingress {
     from_port   = 22
     to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = [var.bastion_host_cidr_block]
-  }
-
-  ingress {
-    from_port   = 9090
-    to_port     = 9090
-    protocol    = "tcp"
-    cidr_blocks = [var.bastion_host_cidr_block]
-  }
-
-  ingress {
-    from_port   = 9100
-    to_port     = 9100
     protocol    = "tcp"
     cidr_blocks = [var.bastion_host_cidr_block]
   }
@@ -113,45 +101,38 @@ resource "aws_security_group" "alb_security_group" {
 
 
 ##################################################################
-# Security Group for the EC2s (Web_Servers)
+# Security Group for the EKS worker nodes (and, by default under
+# the VPC CNI, the pods running on them). This replaces the old
+# ASG web-server SG - the EKS-managed cluster security group already
+# handles control-plane<->node traffic, this one covers node-to-node
+# pod traffic, ALB->pod traffic, and bastion access for troubleshooting.
 ##################################################################
 
-resource "aws_security_group" "web_servers_sg" {
+resource "aws_security_group" "eks_node_sg" {
   vpc_id = var.vpc_id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = [var.asg_sec_group_cidr_block] # Only inside VPC
+    description = "Node-to-node / pod-to-pod traffic within the cluster"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    self        = true
   }
 
   ingress {
-    from_port       = 22
-    to_port         = 22
+    description     = "Allow the ALB (AWS Load Balancer Controller) to reach pods on any TCP port"
+    from_port       = 0
+    to_port         = 65535
     protocol        = "tcp"
-    security_groups = var.bastion_host_sec_group # Only the BASTION_Sec_Group can SSH the WEB_SERVERS! 
+    security_groups = [aws_security_group.alb_security_group.id]
   }
 
   ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = [var.asg_sec_group_cidr_block] # Only inside VPC
-  }
-
-  ingress {
-    from_port   = 9100
-    to_port     = 9100
-    protocol    = "tcp"
-    cidr_blocks = [var.asg_sec_group_cidr_block] # Node Exporter / # Only inside VPC
-  }
-
-  ingress {
+    description = "Allow ICMP from inside the VPC (e.g. bastion connectivity checks)"
     from_port   = -1
     to_port     = -1
     protocol    = "icmp"
-    cidr_blocks = [var.asg_sec_group_cidr_block] # Ping Only Inside VPC
+    cidr_blocks = [var.asg_sec_group_cidr_block]
   }
 
   egress {

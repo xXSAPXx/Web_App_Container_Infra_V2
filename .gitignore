@@ -3,18 +3,25 @@
 
 # Ignore tfvars.file
 IaC/terraform/*.tfvars
+IaC/terraform-ecr-repos/*.tfvars
 
 # Ignore Terraform working directory
 IaC/terraform/.terraform/
+IaC/terraform-ecr-repos/.terraform/
 
 # Ignore Terraform state files
 IaC/terraform/*.tfstate
 IaC/terraform/*.tfstate.backup
+IaC/terraform-ecr-repos/*.tfstate
+IaC/terraform-ecr-repos/*.tfstate.backup
 
 # Ignore crash logs, plan and lock files
 IaC/terraform/crash.log
 IaC/terraform/tfplan
 IaC/terraform/.terraform.lock.hcl
+IaC/terraform-ecr-repos/crash.log
+IaC/terraform-ecr-repos/tfplan
+IaC/terraform-ecr-repos/.terraform.lock.hcl
 
 
 

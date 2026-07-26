@@ -27,15 +27,13 @@ variable "aws_key_pair" {
 }
 
 
-# Grafana Connect Variables: 
-variable "prometheus_grafana_user" {
+# App Ingress DNS Variable:
+# The ALB is provisioned dynamically by the AWS Load Balancer Controller from
+# the k8s/ingress.yaml Ingress, not by Terraform - so this stays empty on the
+# first apply. After `kubectl apply -f k8s/`, read the ALB hostname with
+# `kubectl get ingress` and re-apply with this variable set to wire up Cloudflare DNS.
+variable "app_alb_dns_name" {
   type        = string
-  sensitive   = true
-  description = "Prometheus Grafana User"
-}
-
-variable "prometheus_grafana_api_key" {
-  type        = string
-  sensitive   = true
-  description = "Prometheus Grafana API Key"
+  description = "DNS name of the ALB provisioned by the AWS Load Balancer Controller, once known"
+  default     = ""
 }
