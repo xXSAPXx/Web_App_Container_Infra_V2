@@ -102,4 +102,21 @@ Browser --------------> CloudFlare_Proxy --------------> ALB_DNS ---------------
                                                               Managed Node Group, private subnets
 ```
 
+**Who actually creates/maintains each piece** (this trips people up returning to the
+project after a break, since none of it is a single `terraform apply` anymore):
+- **ALB + its listeners/target groups/health checks** — created by the **AWS Load
+  Balancer Controller** (a pod in-cluster, installed by Terraform's `helm_release`),
+  reacting to `k8s/ingress.yaml`. Not a Terraform resource - `terraform destroy`
+  doesn't know about it directly, which is why `kubectl delete -f k8s/` has to
+  happen *before* `terraform destroy` (see Deployment Workflow above).
+- **Cloudflare `www`/root CNAME records** — created/updated/deleted by
+  **external-dns** (also a pod in-cluster, also installed by Terraform's
+  `helm_release`), watching that same Ingress. Same caveat: not a Terraform
+  resource, needs the Ingress deleted first for cleanup to happen.
+- **ACM certificate + its Cloudflare DNS-validation records** — this one *is*
+  plain Terraform (`module.alb_ssl_cert_validation`), independent of the ALB's
+  existence.
+- **Everything else in this diagram** (VPC, EKS cluster/node group, RDS,
+  bastion, IAM) — plain Terraform, in `IaC/terraform/`.
+
 See the root `README.md` for prerequisites and `k8s/` for the application manifests.

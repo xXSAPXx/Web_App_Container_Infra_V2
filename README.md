@@ -16,7 +16,7 @@ Before deploying this infrastructure, ensure the following prerequisites are met
 ### 🔧 Software
 
 - **Terraform** `>= 1.10.0`
-  _Used for infrastructure as code (IaC) provisioning - VPC, EKS cluster, ECR, RDS, IAM, DNS._
+  _Used for infrastructure as code (IaC) provisioning - VPC, EKS cluster, ECR, RDS, IAM. Also installs two in-cluster controllers via its `helm` provider: the AWS Load Balancer Controller (creates the ALB from `k8s/ingress.yaml`) and **external-dns** (keeps the Cloudflare `www`/root DNS records in sync with that ALB automatically - no manual DNS step)._
 
 - **AWS CLI**
   _Used for authenticating to EKS (`aws eks get-token`), pushing images to ECR, and manual verification._
@@ -53,7 +53,10 @@ Before deploying this infrastructure, ensure the following prerequisites are met
     - Fill in the required variables:
 
 ```hcl
-# Cloudflare
-# AWS EC2 Key Pair (for the bastion host)
-# app_alb_dns_name (left empty until after the first apply - see IaC/README.md)
+# Cloudflare (cloudflare_api_token, cloudflare_zone_id, cloudflare_domain_name)
+# AWS EC2 Key Pair (aws_key_pair, for the bastion host)
 ```
+
+Note: there used to be an `app_alb_dns_name` variable for manually wiring up
+Cloudflare DNS after the ALB existed - that's gone now, replaced by
+external-dns automating it in-cluster (see `IaC/README.md`).
