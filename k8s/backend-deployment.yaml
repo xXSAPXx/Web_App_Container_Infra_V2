@@ -17,9 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          # Replace with the value of `terraform output ecr_backend_repository_url`,
-          # after you've built and pushed the image (see backend/Dockerfile).
-          image: "REPLACE_WITH_ECR_BACKEND_REPOSITORY_URL:latest"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-backend:v1"
           imagePullPolicy: Always
           ports:
             - containerPort: 3000

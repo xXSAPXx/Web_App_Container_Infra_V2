@@ -17,9 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          # Replace with the value of `terraform output ecr_frontend_repository_url`,
-          # after you've built and pushed the image (see frontend/Dockerfile).
-          image: "REPLACE_WITH_ECR_FRONTEND_REPOSITORY_URL:latest"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:v1"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
