@@ -56,17 +56,17 @@ terraform apply
    - Create the real DB secret (do **not** edit `backend-secret.yaml` with real values):
      `kubectl create secret generic backend-db-secret -n calc-app --from-literal=DB_USER=<user> --from-literal=DB_PASS=<password>`
 5. `kubectl apply -f k8s/` - deploys the frontend/backend and creates the Ingress objects, which the AWS Load Balancer Controller turns into a real ALB.
-6. `kubectl get ingress -n calc-app` - once the `ADDRESS` column populates, that's the ALB's DNS name.
-7. `terraform apply -var="app_alb_dns_name=<hostname from step 6>"` - wires up the Cloudflare CNAME to point at that ALB.
-8. Verify: hit the ALB hostname directly first, then `https://www.xxsapxx.uk` once DNS propagates.
+6. Wait for DNS to catch up, then verify: `kubectl get ingress -n calc-app` until the `ADDRESS` column populates, then check `dig www.xxsapxx.uk` (or just try `https://www.xxsapxx.uk` in a browser) - **external-dns** (installed by `terraform apply` in step 1, running in-cluster) watches that Ingress and creates/updates the Cloudflare `www`/root CNAME records automatically. No manual DNS step needed anymore.
 
-To tear down: delete the `k8s/` resources first (`kubectl delete -f k8s/`) so
-the Load Balancer Controller cleans up the ALB/target groups it created,
-*then* `terraform destroy` **from `IaC/terraform/` only** - otherwise
-Terraform doesn't know about (and can't clean up) resources the controller
-created directly in AWS. Do **not** run `terraform destroy` in
-`IaC/terraform-ecr-repos/` unless you actually want to delete your pushed
-images and start over from an empty registry.
+To tear down: delete the `k8s/` resources first (`kubectl delete -f k8s/`) -
+this both lets the Load Balancer Controller clean up the ALB/target groups it
+created, *and* lets external-dns remove the Cloudflare records it created
+(its `policy: sync` setting means it deletes DNS records for Ingresses that
+no longer exist). *Then* `terraform destroy` **from `IaC/terraform/` only** -
+otherwise Terraform doesn't know about (and can't clean up) resources the
+controllers created directly in AWS/Cloudflare. Do **not** run
+`terraform destroy` in `IaC/terraform-ecr-repos/` unless you actually want to
+delete your pushed images and start over from an empty registry.
 
 
 # Network Architecture Diagram:
@@ -75,7 +75,10 @@ This architecture describes traffic flow for the domain `www.xxsapxx.uk`,
 proxied through Cloudflare in **Full TLS mode**, routed to an AWS Application
 Load Balancer (provisioned dynamically by the **AWS Load Balancer Controller**
 running in-cluster, not by Terraform), and forwarded to Kubernetes Services
-based on Ingress path rules.
+based on Ingress path rules. The Cloudflare CNAME pointing at that ALB is
+kept in sync automatically by **external-dns**, also running in-cluster -
+watching the same Ingress and updating Cloudflare via its API whenever the
+ALB's hostname changes or the Ingress is deleted.
 
 ```text
                                                     ALB (HTTP:80 -> redirect HTTPS:443)

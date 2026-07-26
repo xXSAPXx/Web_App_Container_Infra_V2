@@ -11,35 +11,18 @@ provider "cloudflare" {
 
 
 
-# Create a Cloudflare DNS record to the ALB CNAME or IP - [SSL cert validation is handled in module alb_cert_validation]
-# NOTE: the ALB itself is now provisioned dynamically by the AWS Load Balancer
-# Controller (from the k8s/ingress.yaml Ingress resource), not by Terraform.
-# So this module only creates/updates once you have that ALB's DNS name -
-# apply `kubectl apply -f k8s/` first, read the hostname with
-# `kubectl get ingress`, then re-run `terraform apply -var="app_alb_dns_name=<hostname>"`.
+# Cloudflare zone-level config that's independent of the ALB's existence
+# (Page Rule + Always-Use-HTTPS). The actual www/root -> ALB CNAME records
+# are owned by external-dns now (see helm_release.external_dns below) -
+# it's the only thing that reliably knows the ALB's current DNS name.
+# [SSL cert validation is handled separately in module alb_ssl_cert_validation]
 module "cloudflare_dns" {
   source = "./modules/cloudflare"
-  count  = var.app_alb_dns_name != "" ? 1 : 0
 
   # --- Cloudflare Variables for the Module ---
   cloudflare_api_token = var.cloudflare_api_token
   cloudflare_zone_id   = var.cloudflare_zone_id
   select_domain_name   = var.cloudflare_domain_name
-  alb_dns_name         = var.app_alb_dns_name
-
-  # --- Cloudflare_WWW_DNS_Record Settings ---
-  comment         = "Domain pointed to AWS_ALB"
-  sub_domain_name = "www"
-  dns_record_type = "CNAME"
-  dns_ttl         = 1
-  proxied         = true
-
-  # --- Cloudflare_ROOT_to_WWW_DNS_Record Settings ---
-  root_domain_comment  = "Domain pointed to AWS_ALB"
-  root_domain_name     = "@"
-  root_dns_record_type = "CNAME"
-  root_dns_ttl         = 1
-  root_proxied         = true
 
   # --- Cloudflare Page Rule to Redirect from ROOT to WWW-Sub_Domain ---
   rule_target          = "xxsapxx.uk/*" # (Catches requests to: http://xxsapxx.uk, https://xxsapxx.uk, xxsapxx.uk/path, etc.)
@@ -315,6 +298,84 @@ resource "helm_release" "aws_load_balancer_controller" {
   }
 
   depends_on = [module.eks]
+}
+
+
+# Cloudflare API token, made available in-cluster for external-dns.
+# Reuses the same token Terraform itself uses (already scoped to DNS-edit
+# per the README's setup instructions) rather than requiring a second one.
+resource "kubernetes_secret" "cloudflare_api_token" {
+  metadata {
+    name      = "cloudflare-api-token"
+    namespace = "kube-system"
+  }
+
+  data = {
+    cloudflare_api_token = var.cloudflare_api_token
+  }
+
+  type = "Opaque"
+
+  depends_on = [module.eks]
+}
+
+
+# external-dns - watches Ingress resources in-cluster and syncs matching
+# Cloudflare DNS records automatically, closing the loop that used to need
+# a manual `terraform apply -var="app_alb_dns_name=..."` after every
+# `kubectl apply -f k8s/`. policy=sync means it also DELETES the Cloudflare
+# record when the Ingress is deleted (e.g. during teardown) - matches the
+# spin-up/tear-down-per-session workflow this stack is built around.
+# Verify chart values against the current schema before applying:
+# https://github.com/kubernetes-sigs/external-dns/blob/master/charts/external-dns/values.yaml
+resource "helm_release" "external_dns" {
+  name       = "external-dns"
+  repository = "https://kubernetes-sigs.github.io/external-dns/"
+  chart      = "external-dns"
+  namespace  = "kube-system"
+  version    = "1.15.0"
+
+  set {
+    name  = "provider.name"
+    value = "cloudflare"
+  }
+
+  set {
+    name  = "env[0].name"
+    value = "CF_API_TOKEN"
+  }
+
+  set {
+    name  = "env[0].valueFrom.secretKeyRef.name"
+    value = kubernetes_secret.cloudflare_api_token.metadata[0].name
+  }
+
+  set {
+    name  = "env[0].valueFrom.secretKeyRef.key"
+    value = "cloudflare_api_token"
+  }
+
+  set {
+    name  = "policy"
+    value = "sync"
+  }
+
+  set {
+    name  = "sources[0]"
+    value = "ingress"
+  }
+
+  set {
+    name  = "domainFilters[0]"
+    value = var.cloudflare_domain_name
+  }
+
+  set {
+    name  = "txtOwnerId"
+    value = local.eks_cluster_name
+  }
+
+  depends_on = [kubernetes_secret.cloudflare_api_token, helm_release.aws_load_balancer_controller]
 }
 
 

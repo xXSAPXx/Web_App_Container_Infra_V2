@@ -1,4 +1,7 @@
 
+Replace `<BASTION_PUBLIC_IP>` below with `terraform output bastion_host_public_ip`
+(no Elastic IP is attached, so this changes on every apply/recreate).
+
 ##### CREATE A VALID KEY FOR THE SSH CONNECTION #####
 
  1) HAVE THE PRIVATE SSH KEYPAIR:
@@ -41,7 +44,7 @@ ssh-add C:\Users\simeo\Desktop\IT_General\KeyPairs\Test_env
 ssh-add -L  
 
 7) Connect to Bastion_Host in PowerShell:  
-ssh -A -i C:\Users\simeo\Desktop\IT_General\KeyPairs\Test_env ec2-user@13.217.59.81  
+ssh -A -i C:\Users\simeo\Desktop\IT_General\KeyPairs\Test_env ec2-user@<BASTION_PUBLIC_IP>  
 
 8) Check if key is correctly forwarded to the Bastion_Host:  
 ssh-add -L  
@@ -63,7 +66,7 @@ ssh-add /c/Users/simeo/Desktop/IT_General/KeyPairs/Test_env
 ssh-add -L
 
 7) Connect to Bastion_Host in PowerShell:  
-ssh -A -i /c/Users/simeo/Desktop/IT_General/KeyPairs/Test_env ec2-user@13.217.59.81
+ssh -A -i /c/Users/simeo/Desktop/IT_General/KeyPairs/Test_env ec2-user@<BASTION_PUBLIC_IP>
 
 8) Check if key is correctly forwarded to the Bastion_Host:  
  ssh-add -L

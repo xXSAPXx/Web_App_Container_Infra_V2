@@ -1,5 +1,5 @@
 
-# Required Module Providers: 
+# Required Module Providers:
 terraform {
   required_providers {
     aws = {
@@ -12,61 +12,12 @@ terraform {
 }
 
 
-# Change Cloudflare DNS Records to point to the AWS ALB DNS Name: 
-resource "cloudflare_dns_record" "subdomain_to_alb_record" {
-  zone_id = var.cloudflare_zone_id # Domain Zone ID
-  comment = var.comment            #
-  name    = var.sub_domain_name    # Creates www.xxsapxx.uk
-  type    = var.dns_record_type    # ALB doesn't have static IP, use CNAME
-  content = var.alb_dns_name       # Attach DNS Record to AWS ALB CNAME
-  ttl     = var.dns_ttl            # DNS Record TTL 
-  proxied = var.proxied            # Enables Cloudflare HTTPS + caching
-
-  lifecycle { # Prevent RE-Deployment of CloudFlare resource every time we terraform plan
-    ignore_changes = [
-      name,
-      content,
-      meta,
-      modified_on,
-      created_on,
-      comment,
-      comment_modified_on,
-      settings,
-      proxiable,
-      tags,
-      tags_modified_on,
-    ]
-  }
-}
-
-
-# Change Cloudflare ROOT Record to point to the AWS ALB DNS Name: 
-resource "cloudflare_dns_record" "root_domain_to_alb_record" {
-  zone_id = var.cloudflare_zone_id   # Domain Zone ID
-  comment = var.root_domain_comment  #
-  name    = var.root_domain_name     # Creates xxsapxx.uk
-  type    = var.root_dns_record_type # ALB doesn't have static IP, use CNAME
-  content = var.alb_dns_name         # Attach DNS Record to AWS ALB CNAME
-  ttl     = var.root_dns_ttl         # DNS Record TTL 
-  proxied = var.root_proxied         # Enables Cloudflare HTTPS + caching
-
-  lifecycle { # Prevent RE-Deployment of CloudFlare resource every time we terraform plan
-    ignore_changes = [
-      name,
-      content,
-      meta,
-      modified_on,
-      created_on,
-      comment,
-      comment_modified_on,
-      settings,
-      proxiable,
-      tags,
-      tags_modified_on,
-    ]
-  }
-}
-
+# NOTE: the www/root CNAME records pointing at the ALB are NOT managed here
+# anymore - external-dns (running in-cluster) owns them now, since it's the
+# only thing that actually knows the ALB's DNS name and can react when it
+# changes or the Ingress is deleted. See the helm_release.external_dns
+# resource and its Cloudflare API token Secret in the root main.tf.
+# This module only keeps the DNS-independent, always-on zone config below.
 
 
 # Cloudflare Page Rule to Redirect traffic from ROOT to WWW: ---

@@ -44,6 +44,13 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
     alb.ingress.kubernetes.io/healthcheck-path: /
+    # external-dns reads these to create/update the Cloudflare records
+    # automatically once the ALB Controller populates this Ingress's
+    # status.loadBalancer hostname. Only set on this Ingress (not the
+    # backend one too) since both share the same ALB - one record per host
+    # is enough. Comma-separated list = one record per hostname.
+    external-dns.alpha.kubernetes.io/hostname: xxsapxx.uk,www.xxsapxx.uk
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   ingressClassName: alb
   rules:
