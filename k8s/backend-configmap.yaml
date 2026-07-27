@@ -4,10 +4,9 @@ metadata:
   name: backend-config
   namespace: calc-app
 data:
-  # DB_HOST: the RDS endpoint - get it with `terraform output rds_endpoint`
-  # (it includes the port, e.g. "mydb.xxxxx.us-east-1.rds.amazonaws.com:3306" -
-  # strip the ":3306" suffix here since DB_PORT is set separately below).
-  DB_HOST: "REPLACE_WITH_RDS_ENDPOINT"
+  # Rendered from terraform output by IaC/deploy-app.sh - don't kubectl
+  # apply this file directly, run that script instead.
+  DB_HOST: "${DB_HOST}"
   DB_PORT: "3306"
   DB_NAME: "calc_app_db"
   DB_CONNECTION_LIMIT: "10"

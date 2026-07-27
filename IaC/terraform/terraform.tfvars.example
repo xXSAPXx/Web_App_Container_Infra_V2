@@ -10,6 +10,12 @@ cloudflare_domain_name     = <EXAMPLE>
 # Key pair for the EC2 instances
 aws_key_pair               = <EXAMPLE>
 
+# Backend DB credentials - must match whatever admin user/password already
+# exists inside the restored RDS snapshot (Terraform can't derive these).
+# Used to create the backend-db-secret Kubernetes Secret automatically.
+rds_db_username             = <EXAMPLE>
+rds_db_password             = <EXAMPLE>
+
 # Cloudflare DNS is now kept in sync automatically by external-dns running
 # in-cluster (see helm_release.external_dns in main.tf) - no DNS variable
 # needed here anymore.

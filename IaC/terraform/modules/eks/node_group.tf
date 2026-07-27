@@ -66,7 +66,14 @@ resource "aws_launch_template" "eks_node" {
     http_put_response_hop_limit = 2
   }
 
-  vpc_security_group_ids = [var.eks_node_security_group_id]
+  # Supplying a launch template with explicit security groups stops EKS from
+  # auto-attaching its own managed cluster security group to the nodes - that
+  # SG carries the control-plane<->kubelet rules nodes need to actually join
+  # the cluster, so it has to be listed here explicitly alongside our own.
+  vpc_security_group_ids = [
+    var.eks_node_security_group_id,
+    aws_eks_cluster.this.vpc_config[0].cluster_security_group_id,
+  ]
 
   tag_specifications {
     resource_type = "instance"

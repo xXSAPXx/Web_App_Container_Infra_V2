@@ -103,13 +103,3 @@ variable "node_max_size" {
   description = "Maximum worker node count."
   default     = 2
 }
-
-
-##############################################
-# CLUSTER ACCESS (EKS Access Entries):
-##############################################
-
-variable "admin_principal_arn" {
-  type        = string
-  description = "IAM principal ARN (user or role - use the underlying role ARN, not an assumed-role session ARN) granted AmazonEKSClusterAdminPolicy via an EKS access entry."
-}

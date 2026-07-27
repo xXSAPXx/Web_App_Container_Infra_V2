@@ -1,6 +1,9 @@
 # One ALB, two Ingress objects merged via group.name (IngressGroup) so the
 # frontend and backend target groups can each get their own health check.
 # Without group.name these would each provision a SEPARATE ALB.
+#
+# Rendered from terraform output by IaC/deploy-app.sh - don't kubectl apply
+# this file directly, run that script instead.
 
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -14,8 +17,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    # Replace with the value of `terraform output acm_certificate_arn`.
-    alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
+    alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERT_ARN}
     alb.ingress.kubernetes.io/healthcheck-path: /backend
 spec:
   ingressClassName: alb
@@ -42,7 +44,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80},{"HTTPS":443}]'
     alb.ingress.kubernetes.io/ssl-redirect: "443"
-    alb.ingress.kubernetes.io/certificate-arn: REPLACE_WITH_ACM_CERTIFICATE_ARN
+    alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERT_ARN}
     alb.ingress.kubernetes.io/healthcheck-path: /
     # external-dns reads these to create/update the Cloudflare records
     # automatically once the ALB Controller populates this Ingress's

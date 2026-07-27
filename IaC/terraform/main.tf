@@ -54,8 +54,6 @@ provider "aws" {
   region = "us-east-1" # Or use a variable if you prefer
 }
 
-data "aws_caller_identity" "current" {}
-
 # Shared cluster name - passed to both the VPC module (subnet discovery tags)
 # and the EKS module (the cluster itself), so they can't drift apart.
 locals {
@@ -155,7 +153,7 @@ module "database" {
   # -------- RDS Configuration Settings --------
 
   rds_engine            = "mysql"
-  rds_engine_version    = "8.0.35"
+  rds_engine_version    = "8.0.42" # Must match whatever the restored snapshot actually runs - RDS can't "downgrade" via ModifyDBInstance. See the ignore_changes note in modules/database/main.tf.
   rds_instance_class    = "db.t3.micro"
   rds_allocated_storage = 20
   rds_storage_encrypted = true
@@ -252,7 +250,6 @@ module "eks" {
   private_subnet_ids = module.vpc.private_subnet_ids
 
   eks_node_security_group_id = module.security_groups.eks_node_security_group_id
-  admin_principal_arn        = data.aws_caller_identity.current.arn
 }
 
 
@@ -376,6 +373,38 @@ resource "helm_release" "external_dns" {
   }
 
   depends_on = [kubernetes_secret.cloudflare_api_token, helm_release.aws_load_balancer_controller]
+}
+
+
+# The calc-app namespace is created here (not in k8s/00-namespace.yaml) so
+# the backend DB secret below can live in it - Terraform has to create the
+# namespace before it can create anything inside it, and this secret's
+# credentials aren't something kubectl/k8s manifests can know.
+# k8s/ manifests still assume this namespace already exists by the time
+# `kubectl apply -f k8s/` runs (i.e. always apply Terraform first).
+resource "kubernetes_namespace" "calc_app" {
+  metadata {
+    name = "calc-app"
+  }
+
+  depends_on = [module.eks]
+}
+
+
+# Backend DB Secret - replaces the manual
+# `kubectl create secret generic backend-db-secret ...` step.
+resource "kubernetes_secret" "backend_db" {
+  metadata {
+    name      = "backend-db-secret"
+    namespace = kubernetes_namespace.calc_app.metadata[0].name
+  }
+
+  data = {
+    DB_USER = var.rds_db_username
+    DB_PASS = var.rds_db_password
+  }
+
+  type = "Opaque"
 }
 
 

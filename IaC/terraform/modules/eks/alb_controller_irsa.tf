@@ -10,8 +10,6 @@
 # policy across releases.
 ##################################################################
 
-data "aws_caller_identity" "current" {}
-
 locals {
   oidc_provider_url = replace(aws_iam_openid_connect_provider.eks.url, "https://", "")
 }

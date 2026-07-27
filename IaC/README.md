@@ -33,13 +33,18 @@ terraform apply
 
 **Every session** (from `IaC/terraform/`):
 
-1. `terraform apply` - provisions the VPC, EKS cluster + managed node group,
-   RDS, the bastion host, and installs the AWS Load Balancer Controller into
-   the cluster via Helm. (Looks up the ECR repos created above by name - it
-   doesn't create them.)
-2. Point kubectl at the new cluster:
+1. Make sure `rds_db_username`/`rds_db_password` are set in `terraform.tfvars`
+   (must match the admin user/password already inside the restored RDS
+   snapshot - Terraform can't derive these, see the comment on those
+   variables in `variables.tf`).
+2. `terraform apply` - provisions the VPC, EKS cluster + managed node group,
+   RDS, the bastion host, the `calc-app` namespace + backend DB Secret, and
+   installs the AWS Load Balancer Controller + external-dns into the cluster
+   via Helm. (Looks up the ECR repos created earlier by name - it doesn't
+   create them.)
+3. Point kubectl at the new cluster:
    `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region us-east-1`
-3. Build and push the app images (no CI/CD pipeline yet - this is a manual
+4. Build and push the app images (no CI/CD pipeline yet - this is a manual
    step for now; skip this step on repeat sessions if you haven't changed the
    app code since your last push - the images from last time are still there):
    ```
@@ -49,20 +54,21 @@ terraform apply
    docker build -t $(terraform output -raw ecr_backend_repository_url):latest ./backend
    docker push $(terraform output -raw ecr_backend_repository_url):latest
    ```
-4. In `k8s/`, replace the `REPLACE_WITH_*` placeholders:
-   - `backend-deployment.yaml` / `frontend-deployment.yaml`: the ECR image URLs from step 3.
-   - `backend-configmap.yaml`: `DB_HOST` from `terraform output rds_endpoint` (strip the trailing `:3306`).
-   - `ingress.yaml` (both Ingress objects): `terraform output acm_certificate_arn`.
-   - Create the real DB secret (do **not** edit `backend-secret.yaml` with real values):
-     `kubectl create secret generic backend-db-secret -n calc-app --from-literal=DB_USER=<user> --from-literal=DB_PASS=<password>`
-5. `kubectl apply -f k8s/` - deploys the frontend/backend and creates the Ingress objects, which the AWS Load Balancer Controller turns into a real ALB.
-6. Wait for DNS to catch up, then verify: `kubectl get ingress -n calc-app` until the `ADDRESS` column populates, then check `dig www.xxsapxx.uk` (or just try `https://www.xxsapxx.uk` in a browser) - **external-dns** (installed by `terraform apply` in step 1, running in-cluster) watches that Ingress and creates/updates the Cloudflare `www`/root CNAME records automatically. No manual DNS step needed anymore.
+   (Update the `image:` tags in `k8s/backend-deployment.yaml`/`frontend-deployment.yaml` if you bump the version tag.)
+5. `./IaC/deploy-app.sh` - reads `DB_HOST`/`acm_certificate_arn` straight from
+   Terraform's outputs, renders the `k8s/*.yaml` templates with them, and
+   applies everything. This is the one command that replaces what used to be
+   four manual copy-paste steps (DB host, cert ARN, DB secret, `kubectl apply`).
+6. Wait for DNS to catch up, then verify: `kubectl get ingress -n calc-app` until the `ADDRESS` column populates, then check `dig www.xxsapxx.uk` (or just try `https://www.xxsapxx.uk` in a browser) - **external-dns** (installed by `terraform apply` in step 2, running in-cluster) watches that Ingress and creates/updates the Cloudflare `www`/root CNAME records automatically. No manual DNS step needed anymore.
 
-To tear down: delete the `k8s/` resources first (`kubectl delete -f k8s/`) -
-this both lets the Load Balancer Controller clean up the ALB/target groups it
-created, *and* lets external-dns remove the Cloudflare records it created
-(its `policy: sync` setting means it deletes DNS records for Ingresses that
-no longer exist). *Then* `terraform destroy` **from `IaC/terraform/` only** -
+To tear down: delete the applied resources first
+(`kubectl delete -f k8s/rendered/` - that's the directory `deploy-app.sh`
+actually applied; `kubectl delete -f k8s/` also works since delete only
+matches on kind/name/namespace, not the templated content) - this both lets
+the Load Balancer Controller clean up the ALB/target groups it created, *and*
+lets external-dns remove the Cloudflare records it created (its
+`policy: sync` setting means it deletes DNS records for Ingresses that no
+longer exist). *Then* `terraform destroy` **from `IaC/terraform/` only** -
 otherwise Terraform doesn't know about (and can't clean up) resources the
 controllers created directly in AWS/Cloudflare. Do **not** run
 `terraform destroy` in `IaC/terraform-ecr-repos/` unless you actually want to

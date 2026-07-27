@@ -73,6 +73,13 @@ resource "aws_eks_cluster" "this" {
     endpoint_public_access  = var.endpoint_public_access
   }
 
+  # Required for aws_eks_access_entry/aws_eks_access_policy_association below -
+  # EKS defaults to the legacy CONFIG_MAP-only auth mode otherwise.
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true # immutable - must match what AWS already set, or this forces cluster replacement
+  }
+
   encryption_config {
     provider {
       key_arn = aws_kms_key.eks.arn
@@ -105,24 +112,14 @@ resource "aws_iam_openid_connect_provider" "eks" {
 
 
 ##################################################################
-# EKS Access Entries - modern replacement for the aws-auth ConfigMap,
-# maps the deploying IAM principal to cluster-admin.
+# Cluster access (modern Access Entries API, not the legacy aws-auth
+# ConfigMap): `access_config.bootstrap_cluster_creator_admin_permissions`
+# above already auto-creates a cluster-admin access entry for whichever
+# IAM principal ran `terraform apply` and created the cluster - that's
+# the only principal that needs access in this single-deployer setup, so
+# there's nothing further to manage here. (An explicit aws_eks_access_entry
+# for the same principal would collide with that auto-created one -
+# EKS rejects it as "already in use".) If a second principal ever needs
+# access, add an aws_eks_access_entry + aws_eks_access_policy_association
+# for THAT principal's ARN specifically.
 ##################################################################
-
-resource "aws_eks_access_entry" "admin" {
-  cluster_name  = aws_eks_cluster.this.name
-  principal_arn = var.admin_principal_arn
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "admin" {
-  cluster_name  = aws_eks_cluster.this.name
-  principal_arn = var.admin_principal_arn
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
-  }
-
-  depends_on = [aws_eks_access_entry.admin]
-}
