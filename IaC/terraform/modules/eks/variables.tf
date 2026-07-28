@@ -11,8 +11,8 @@ variable "cluster_name" {
 
 variable "cluster_version" {
   type        = string
-  description = "Kubernetes version for the EKS control plane."
-  default     = "1.31"
+  description = "Kubernetes version for the EKS control plane. Deliberately not pinned to the latest (1.36 as of 2026-07) - keeping some standard-support versions above this one gives room to practice in-place upgrades later. Check `aws eks describe-cluster-versions` before bumping further, support windows move fast."
+  default     = "1.34"
 }
 
 

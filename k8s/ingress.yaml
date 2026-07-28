@@ -46,12 +46,20 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERT_ARN}
     alb.ingress.kubernetes.io/healthcheck-path: /
-    # external-dns reads these to create/update the Cloudflare records
+    # external-dns reads this to create/update the Cloudflare record
     # automatically once the ALB Controller populates this Ingress's
     # status.loadBalancer hostname. Only set on this Ingress (not the
     # backend one too) since both share the same ALB - one record per host
-    # is enough. Comma-separated list = one record per hostname.
-    external-dns.alpha.kubernetes.io/hostname: xxsapxx.uk,www.xxsapxx.uk
+    # is enough.
+    #
+    # www only - NOT the bare apex. external-dns's TXT-registry ownership
+    # scheme breaks for zone-apex CNAMEs (its "cname-<hostname>" ownership
+    # record collapses to "cname-xxsapxx.uk" with no separating dot, fails
+    # its own zone-suffix match, and retries forever without ever
+    # converging). The apex is instead a plain static CNAME to
+    # www.xxsapxx.uk, managed directly in modules/cloudflare - see the note
+    # there for why.
+    external-dns.alpha.kubernetes.io/hostname: www.xxsapxx.uk
     external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
 spec:
   ingressClassName: alb

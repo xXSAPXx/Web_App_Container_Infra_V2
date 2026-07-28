@@ -8,5 +8,5 @@ data:
   # apply this file directly, run that script instead.
   DB_HOST: "${DB_HOST}"
   DB_PORT: "3306"
-  DB_NAME: "calc_app_db"
+  DB_NAME: "CALC_APP_DB"
   DB_CONNECTION_LIMIT: "10"

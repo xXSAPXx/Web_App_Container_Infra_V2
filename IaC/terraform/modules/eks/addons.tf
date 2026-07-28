@@ -8,6 +8,13 @@ resource "aws_eks_addon" "vpc_cni" {
   cluster_name                = aws_eks_cluster.this.name
   addon_name                  = "vpc-cni"
   resolve_conflicts_on_update = "OVERWRITE"
+
+  # Turns on the add-on's built-in eBPF network policy agent, so plain
+  # Kubernetes NetworkPolicy objects (see k8s/network-policies.yaml) actually
+  # get enforced instead of silently doing nothing.
+  configuration_values = jsonencode({
+    enableNetworkPolicy = "true"
+  })
 }
 
 resource "aws_eks_addon" "kube_proxy" {

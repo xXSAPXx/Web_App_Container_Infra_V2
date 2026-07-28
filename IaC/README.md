@@ -41,7 +41,8 @@ terraform apply
    RDS, the bastion host, the `calc-app` namespace + backend DB Secret, and
    installs the AWS Load Balancer Controller + external-dns into the cluster
    via Helm. (Looks up the ECR repos created earlier by name - it doesn't
-   create them.)
+   create them.) Also enables the vpc-cni add-on's network policy agent, so
+   the `NetworkPolicy` objects applied in step 5 are actually enforced.
 3. Point kubectl at the new cluster:
    `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region us-east-1`
 4. Build and push the app images (no CI/CD pipeline yet - this is a manual
@@ -124,5 +125,28 @@ project after a break, since none of it is a single `terraform apply` anymore):
   existence.
 - **Everything else in this diagram** (VPC, EKS cluster/node group, RDS,
   bastion, IAM) — plain Terraform, in `IaC/terraform/`.
+
+
+# Network Policy (default-deny baseline):
+
+`k8s/network-policies.yaml` locks the `calc-app` namespace down to a
+default-deny baseline (both ingress and egress) with explicit allows carved
+out only for the traffic paths the app actually needs:
+
+- all pods -> CoreDNS (`kube-system`, port 53) - otherwise nothing can
+  resolve Service names or the RDS endpoint hostname.
+- `backend` -> RDS's private subnets, port 3306 - RDS isn't a pod, so this
+  is an `ipBlock` rule rather than a pod selector.
+- the ALB -> `frontend`/`backend`, ports 80/3000 - also an `ipBlock` rule
+  (matching the public subnets the ALB's ENIs live in), since `target-type:
+  ip` (see `k8s/ingress.yaml`) sends traffic straight from the ALB to pod
+  IPs, bypassing the Services entirely.
+
+This only takes effect because `terraform apply` enables the vpc-cni
+add-on's network policy agent (`modules/eks/addons.tf`) - without it,
+`NetworkPolicy` objects apply cleanly but silently enforce nothing, which is
+an easy trap to fall into. Kubelet readiness/liveness probes are node-local
+traffic and are allowed through by that agent automatically, even under
+default-deny.
 
 See the root `README.md` for prerequisites and `k8s/` for the application manifests.

@@ -12,12 +12,29 @@ terraform {
 }
 
 
-# NOTE: the www/root CNAME records pointing at the ALB are NOT managed here
-# anymore - external-dns (running in-cluster) owns them now, since it's the
-# only thing that actually knows the ALB's DNS name and can react when it
-# changes or the Ingress is deleted. See the helm_release.external_dns
-# resource and its Cloudflare API token Secret in the root main.tf.
-# This module only keeps the DNS-independent, always-on zone config below.
+# NOTE: the www CNAME pointing at the ALB is NOT managed here - external-dns
+# (running in-cluster) owns it, since it's the only thing that actually
+# knows the ALB's DNS name and can react when it changes or the Ingress is
+# deleted. See the helm_release.external_dns resource and its Cloudflare API
+# token Secret in the root main.tf.
+#
+# The bare apex is different: external-dns's TXT-registry ownership scheme
+# breaks for zone-apex CNAMEs (its "cname-<hostname>" ownership record
+# collapses to "cname-xxsapxx.uk" with no separating dot, which fails its
+# own zone-suffix match and never converges - visible as an endless
+# UPDATE loop in its logs, retried every reconcile interval forever). So the
+# apex is kept here instead, as a plain static CNAME to www.xxsapxx.uk (not
+# to the ALB directly) - the target never changes session to session, so
+# this needs no dynamic input and no manual step, same as everything else
+# in this module.
+resource "cloudflare_dns_record" "root_to_www" {
+  zone_id = var.cloudflare_zone_id
+  name    = var.select_domain_name
+  type    = "CNAME"
+  content = "www.${var.select_domain_name}"
+  ttl     = 1 # Must be 1 ("Automatic") when proxied
+  proxied = true
+}
 
 
 # Cloudflare Page Rule to Redirect traffic from ROOT to WWW: ---

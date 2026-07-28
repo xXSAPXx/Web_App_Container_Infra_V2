@@ -153,7 +153,7 @@ module "database" {
   # -------- RDS Configuration Settings --------
 
   rds_engine            = "mysql"
-  rds_engine_version    = "8.0.42" # Must match whatever the restored snapshot actually runs - RDS can't "downgrade" via ModifyDBInstance. See the ignore_changes note in modules/database/main.tf.
+  rds_engine_version    = "8.0.35" # Matches the snapshot's own native version (verify with `aws rds describe-db-snapshots` if the snapshot is ever replaced) - restoring at a different version silently triggers an in-place upgrade on every apply. Only bump this if you deliberately want to upgrade the restored instance, and only right after a full destroy so there's no live instance to conflict with (RDS can't downgrade via ModifyDBInstance).
   rds_instance_class    = "db.t3.micro"
   rds_allocated_storage = 20
   rds_storage_encrypted = true

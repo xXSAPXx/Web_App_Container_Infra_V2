@@ -1,0 +1,115 @@
+# Default-deny baseline for the calc-app namespace, plus explicit allows for
+# every real traffic path the app needs. Enforced by the vpc-cni add-on's
+# network policy agent (enabled via configuration_values in
+# IaC/terraform/modules/eks/addons.tf) - without that, these objects would
+# apply but silently do nothing.
+#
+# Subnet CIDRs below are hardcoded to match IaC/terraform/modules/vpc's
+# defaults (public: 10.0.0.0/20 + 10.0.16.0/20, private: 10.0.32.0/19 +
+# 10.0.64.0/19) - update here if those ever change.
+#
+# Note: kubelet readiness/liveness probes (server.js's /backend, frontend's
+# /) are node-local traffic and are allowed by the vpc-cni network policy
+# agent by default, even under default-deny - no explicit rule needed for
+# those.
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: calc-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# All pods need to resolve DNS (Service names, RDS endpoint hostname) via
+# CoreDNS, which runs in kube-system.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress
+  namespace: calc-app
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+# backend -> RDS. RDS isn't a pod, so this has to be an ipBlock against the
+# private subnets rather than a podSelector.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-to-rds-egress
+  namespace: calc-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.32.0/19
+        - ipBlock:
+            cidr: 10.0.64.0/19
+      ports:
+        - protocol: TCP
+          port: 3306
+---
+# ALB target-type: ip sends traffic straight from the ALB's ENIs (which live
+# in the public subnets) to pod IPs, bypassing the frontend/backend Services
+# - so this also has to be an ipBlock, not a podSelector.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alb-to-frontend-ingress
+  namespace: calc-app
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/20
+        - ipBlock:
+            cidr: 10.0.16.0/20
+      ports:
+        - protocol: TCP
+          port: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-alb-to-backend-ingress
+  namespace: calc-app
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/20
+        - ipBlock:
+            cidr: 10.0.16.0/20
+      ports:
+        - protocol: TCP
+          port: 3000
