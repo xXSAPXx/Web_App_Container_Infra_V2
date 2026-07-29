@@ -61,3 +61,8 @@ output "private_dns_zone_id" {
   description = "The ID of the Route53 private zone."
   value       = aws_route53_zone.private.zone_id
 }
+
+output "private_dns_zone_name" {
+  description = "The domain name of the Route53 private zone (e.g. internal.xxsapxx.local)."
+  value       = aws_route53_zone.private.name
+}

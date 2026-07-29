@@ -1,13 +1,10 @@
 
 ###################################################################################
 # Generate a new base64 encoded userdata script for the Bastion_Host.
-# With the private_dns_zone_id dynamic variable for hostname self-registration.
 ###################################################################################
 
 locals {
-  bastion_prometheus_host_userdata = templatefile("${path.module}/userdata_for_bastion_prometheus_host.tpl", {
-    private_dns_zone_id = var.private_dns_zone_id
-  })
+  bastion_prometheus_host_userdata = templatefile("${path.module}/userdata_for_bastion_prometheus_host.tpl", {})
 }
 
 
@@ -22,7 +19,6 @@ resource "aws_instance" "bastion_prometheus" {
   vpc_security_group_ids = var.bastion_sec_group_ids
   key_name               = var.key_name
   user_data              = base64encode(local.bastion_prometheus_host_userdata)
-  iam_instance_profile   = var.iam_instance_profile
 
 
   root_block_device {
@@ -34,4 +30,23 @@ resource "aws_instance" "bastion_prometheus" {
     Name = var.bastion_host_tag_name
   }
 
+}
+
+
+########################################################################
+# Private DNS record for the bastion - Terraform-managed since this is a
+# single static instance whose lifecycle Terraform already fully controls
+# (as opposed to a dynamic ASG, where something has to react to real-time
+# scale events instead - that's what AWS Cloud Map is for). Replaces a
+# boot-time shell script that self-registered via `aws route53
+# change-resource-record-sets` and had no matching cleanup on termination,
+# leaving stale records behind on every destroy/recreate cycle.
+########################################################################
+
+resource "aws_route53_record" "bastion" {
+  zone_id = var.private_dns_zone_id
+  name    = "${var.bastion_dns_name}.${var.private_dns_zone_name}"
+  type    = "A"
+  ttl     = 120
+  records = [aws_instance.bastion_prometheus.private_ip]
 }

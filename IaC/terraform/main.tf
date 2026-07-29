@@ -130,20 +130,6 @@ module "security_groups" {
 
 
 
-# Create All IAM Policies / Roles and IAM Instance Profiles:
-######################################################################################
-
-module "iam" {
-  source = "./modules/iam"
-
-  # --- IAM Policy Route53 Zone ID ---
-  private_dns_zone_id = module.vpc.private_dns_zone_id
-
-}
-
-
-
-
 # RDS Configuration and Creation:
 ######################################################################################
 
@@ -185,8 +171,10 @@ module "database" {
 module "bastion_prometheus" {
   source = "./modules/bastion_prometheus_host"
 
-  # --- Pass PRIVATE_DNS_ZONE to Bastion_Host User_Data_Script: ---
-  private_dns_zone_id = module.vpc.private_dns_zone_id
+  # --- Terraform-managed static DNS record for the bastion (see the note in
+  # modules/bastion_prometheus_host/main.tf) ---
+  private_dns_zone_id   = module.vpc.private_dns_zone_id
+  private_dns_zone_name = module.vpc.private_dns_zone_name
 
   # --- Bastion Host Settings ---
   ami_id                = "ami-0583d8c7a9c35822c"
@@ -194,7 +182,6 @@ module "bastion_prometheus" {
   subnet_id             = module.vpc.public_subnet_2_id
   bastion_sec_group_ids = [module.security_groups.bastion_host_security_group_id]
   key_name              = var.aws_key_pair
-  iam_instance_profile  = module.iam.bastion_instance_profile_name
 
   # EBS Volume Settings:
   volume_size = 10
@@ -416,6 +403,10 @@ resource "kubernetes_secret" "backend_db" {
 
 output "bastion_host_public_ip" {
   value = module.bastion_prometheus.bastion_host_public_ip
+}
+
+output "bastion_private_dns_name" {
+  value = module.bastion_prometheus.bastion_private_dns_name
 }
 
 output "rds_endpoint" {

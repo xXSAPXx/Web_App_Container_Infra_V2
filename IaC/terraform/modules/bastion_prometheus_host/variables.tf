@@ -5,7 +5,18 @@
 variable "private_dns_zone_id" {
   type        = string
   sensitive   = true
-  description = "Private DNS Zone ID for the Bastion Host to register its DNS record"
+  description = "Private DNS Zone ID the bastion's static A record is created in"
+}
+
+variable "private_dns_zone_name" {
+  type        = string
+  description = "Domain name of the private DNS zone (e.g. internal.xxsapxx.local) - used to build the bastion's FQDN"
+}
+
+variable "bastion_dns_name" {
+  type        = string
+  description = "Subdomain label for the bastion's DNS record, relative to private_dns_zone_name"
+  default     = "bastion"
 }
 
 
@@ -36,11 +47,6 @@ variable "bastion_sec_group_ids" {
 
 variable "key_name" {
   description = "Key pair name for SSH access"
-  type        = string
-}
-
-variable "iam_instance_profile" {
-  description = "IAM instance profile for the bastion host (used for private-DNS self-registration)"
   type        = string
 }
 
