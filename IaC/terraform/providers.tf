@@ -24,6 +24,14 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.16"
     }
+    # Generates values (like the backend's JWT signing secret) that Terraform
+    # itself has no built-in way to create and persist - random_password
+    # generates once and stores the result in state, staying stable across
+    # applies instead of regenerating every time.
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 

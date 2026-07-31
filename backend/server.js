@@ -77,7 +77,7 @@ app.post('/calculator/api/login', (req, res) => {
                 if (!match) {
                     return res.status(401).json({ error: 'Invalid credentials' });
                 }
-                const token = jwt.sign({ id: user.id }, 'your_secret_key', { expiresIn: '1h' });
+                const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
                 res.json({ token });
             } catch (compareError) {
                 console.error('Error comparing passwords:', compareError);

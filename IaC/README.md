@@ -52,15 +52,21 @@ terraform apply
    `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region us-east-1`
 4. Build and push the app images (no CI/CD pipeline yet - this is a manual
    step for now; skip this step on repeat sessions if you haven't changed the
-   app code since your last push - the images from last time are still there):
+   app code since your last push - the images from last time are still there).
+   Tag must match whatever `k8s/backend-deployment.yaml`/`frontend-deployment.yaml`
+   currently reference (`:v2` backend / `:v1` frontend as of this writing) -
+   `:latest` won't get picked up, the manifests pin exact tags on purpose so
+   a deploy is always reproducible instead of silently picking up whatever
+   was pushed most recently:
    ```
    aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-   docker build -t $(terraform output -raw ecr_frontend_repository_url):latest ./frontend
-   docker push $(terraform output -raw ecr_frontend_repository_url):latest
-   docker build -t $(terraform output -raw ecr_backend_repository_url):latest ./backend
-   docker push $(terraform output -raw ecr_backend_repository_url):latest
+   docker build -t $(terraform output -raw ecr_frontend_repository_url):v1 ./frontend
+   docker push $(terraform output -raw ecr_frontend_repository_url):v1
+   docker build -t $(terraform output -raw ecr_backend_repository_url):v2 ./backend
+   docker push $(terraform output -raw ecr_backend_repository_url):v2
    ```
-   (Update the `image:` tags in `k8s/backend-deployment.yaml`/`frontend-deployment.yaml` if you bump the version tag.)
+   Bump the tag on both this command and the matching `image:` line in
+   `k8s/` whenever you change that app's code.
 5. `./IaC/deploy-app.sh` - reads `acm_certificate_arn` straight from
    Terraform's outputs, renders the `k8s/*.yaml` templates with it, and
    applies everything (`DB_HOST` is a fixed value pointing at the stable DNS

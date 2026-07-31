@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-backend:v1"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-backend:v2"
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -25,7 +25,7 @@ spec:
             - configMapRef:
                 name: backend-config
             - secretRef:
-                name: backend-db-secret
+                name: backend-secrets
           # server.js calls process.exit(1) if it can't reach the DB on boot,
           # so a pod that can't reach RDS will crash-loop until it can - that's
           # expected/fine, Kubernetes just keeps restarting it.

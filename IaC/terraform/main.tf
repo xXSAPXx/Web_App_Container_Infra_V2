@@ -385,15 +385,27 @@ resource "kubernetes_namespace" "calc_app" {
 
 # Backend DB Secret - replaces the manual
 # `kubectl create secret generic backend-db-secret ...` step.
+# JWT signing secret - purely internal to the backend, nothing external it
+# needs to match (unlike the DB credentials below), so Terraform generates
+# and owns it rather than asking for it in terraform.tfvars. One shared
+# value across all backend replicas is required, not just convenient - it's
+# what lets a token signed by one pod be verified by any other pod behind
+# the same Service.
+resource "random_password" "jwt_secret" {
+  length  = 48
+  special = false
+}
+
 resource "kubernetes_secret" "backend_db" {
   metadata {
-    name      = "backend-db-secret"
+    name      = "backend-secrets"
     namespace = kubernetes_namespace.calc_app.metadata[0].name
   }
 
   data = {
-    DB_USER = var.rds_db_username
-    DB_PASS = var.rds_db_password
+    DB_USER    = var.rds_db_username
+    DB_PASS    = var.rds_db_password
+    JWT_SECRET = random_password.jwt_secret.result
   }
 
   type = "Opaque"
