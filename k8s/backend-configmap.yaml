@@ -4,9 +4,11 @@ metadata:
   name: backend-config
   namespace: calc-app
 data:
-  # Rendered from terraform output by IaC/deploy-app.sh - don't kubectl
-  # apply this file directly, run that script instead.
-  DB_HOST: "${DB_HOST}"
+  # DB_HOST is a stable Terraform-managed DNS name (see
+  # modules/database/main.tf), not the RDS instance's own raw endpoint -
+  # that changes every session since a fresh restore gets a fresh
+  # AWS-generated hostname. Fixed value, no templating needed here.
+  DB_HOST: "mysql-db.internal.xxsapxx.local"
   DB_PORT: "3306"
   DB_NAME: "CALC_APP_DB"
   DB_CONNECTION_LIMIT: "10"

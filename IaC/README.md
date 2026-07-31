@@ -43,6 +43,11 @@ terraform apply
    via Helm. (Looks up the ECR repos created earlier by name - it doesn't
    create them.) Also enables the vpc-cni add-on's network policy agent, so
    the `NetworkPolicy` objects applied in step 5 are actually enforced.
+   Also creates stable private DNS records for the bastion
+   (`bastion.internal.xxsapxx.local`) and RDS (`mysql-db.internal.xxsapxx.local`)
+   in the private Route53 zone - both point at whatever the real
+   endpoint/IP happens to be this session, so nothing downstream needs to
+   care that RDS gets a brand-new AWS-generated endpoint on every restore.
 3. Point kubectl at the new cluster:
    `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region us-east-1`
 4. Build and push the app images (no CI/CD pipeline yet - this is a manual
@@ -56,10 +61,12 @@ terraform apply
    docker push $(terraform output -raw ecr_backend_repository_url):latest
    ```
    (Update the `image:` tags in `k8s/backend-deployment.yaml`/`frontend-deployment.yaml` if you bump the version tag.)
-5. `./IaC/deploy-app.sh` - reads `DB_HOST`/`acm_certificate_arn` straight from
-   Terraform's outputs, renders the `k8s/*.yaml` templates with them, and
-   applies everything. This is the one command that replaces what used to be
-   four manual copy-paste steps (DB host, cert ARN, DB secret, `kubectl apply`).
+5. `./IaC/deploy-app.sh` - reads `acm_certificate_arn` straight from
+   Terraform's outputs, renders the `k8s/*.yaml` templates with it, and
+   applies everything (`DB_HOST` is a fixed value pointing at the stable DNS
+   name from step 2, so it doesn't need to be read/templated per session).
+   This is the one command that replaces what used to be four manual
+   copy-paste steps (DB host, cert ARN, DB secret, `kubectl apply`).
 6. Wait for DNS to catch up, then verify: `kubectl get ingress -n calc-app` until the `ADDRESS` column populates, then check `dig www.xxsapxx.uk` (or just try `https://www.xxsapxx.uk` in a browser) - **external-dns** (installed by `terraform apply` in step 2, running in-cluster) watches that Ingress and creates/updates the Cloudflare `www`/root CNAME records automatically. No manual DNS step needed anymore.
 
 To tear down: delete the applied resources first

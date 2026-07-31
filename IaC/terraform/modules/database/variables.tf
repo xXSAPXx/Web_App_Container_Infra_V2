@@ -81,3 +81,24 @@ variable "skip_final_snapshot" {
   description = "CREATE or SKIP the final snapshot on instance termination"
   default     = false
 }
+
+
+##############################################
+# Private DNS Record:
+##############################################
+variable "private_dns_zone_id" {
+  type        = string
+  sensitive   = true
+  description = "Private DNS Zone ID the RDS instance's static CNAME is created in"
+}
+
+variable "private_dns_zone_name" {
+  type        = string
+  description = "Domain name of the private DNS zone (e.g. internal.xxsapxx.local) - used to build the RDS instance's FQDN"
+}
+
+variable "db_dns_name" {
+  type        = string
+  description = "Subdomain label for the RDS instance's DNS record, relative to private_dns_zone_name"
+  default     = "mysql-db"
+}

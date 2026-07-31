@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Renders k8s/*.yaml templates using values pulled live from Terraform
-# outputs (DB_HOST, ACM_CERT_ARN), then applies them.
+# outputs (currently just ACM_CERT_ARN - DB_HOST is a fixed Terraform-managed
+# DNS name now, see modules/database/main.tf, so it no longer needs to be
+# read/templated per session), then applies them.
 #
 # Run this AFTER `terraform apply` in IaC/terraform has finished - it reads
 # that stack's outputs directly. Requires: terraform, kubectl, envsubst
@@ -22,12 +24,9 @@ echo "==> Reading Terraform outputs from $TF_DIR"
 # failure, so a transient failure here would silently render/apply with an
 # empty value instead of stopping the script. Assign first, export after,
 # so a failed substitution actually halts the script.
-RDS_ENDPOINT="$(terraform -chdir="$TF_DIR" output -raw rds_endpoint)"
-DB_HOST="${RDS_ENDPOINT%%:*}" # strip the trailing :3306
 ACM_CERT_ARN="$(terraform -chdir="$TF_DIR" output -raw acm_certificate_arn)"
-export DB_HOST ACM_CERT_ARN
+export ACM_CERT_ARN
 
-echo "    DB_HOST      = $DB_HOST"
 echo "    ACM_CERT_ARN = $ACM_CERT_ARN"
 
 echo "==> Rendering templates into $RENDERED_DIR"

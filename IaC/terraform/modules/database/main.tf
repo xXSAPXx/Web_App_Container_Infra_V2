@@ -29,3 +29,23 @@ resource "aws_db_instance" "mydb" {
 }
 
 
+################################################################################
+# Private DNS record for RDS - Terraform-managed, same reasoning as the
+# bastion's: RDS auto-generates a new endpoint hostname every time this
+# instance is recreated (restoring from a snapshot into a fresh instance,
+# same as every session in this repo), so a stable alias decouples the app
+# (and anyone connecting manually) from whatever hostname RDS happened to
+# generate this time. Multi-AZ failover itself doesn't need this - AWS
+# already repoints the RDS endpoint's own DNS record automatically for
+# that case - this is for the cases AWS doesn't handle: fresh restores,
+# Blue/Green cutovers, migrating to a different instance entirely.
+################################################################################
+resource "aws_route53_record" "rds" {
+  zone_id = var.private_dns_zone_id
+  name    = "${var.db_dns_name}.${var.private_dns_zone_name}"
+  type    = "CNAME"
+  ttl     = 60
+  records = [aws_db_instance.mydb.address]
+}
+
+

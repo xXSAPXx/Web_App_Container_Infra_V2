@@ -161,6 +161,11 @@ module "database" {
   # Prevent deletion of the database
   skip_final_snapshot           = true
   rds_final_snapshot_identifier = "calculator-app-rds-final-snapshot-iac2"
+
+  # --- Terraform-managed static DNS record for RDS (see the note in
+  # modules/database/main.tf) ---
+  private_dns_zone_id   = module.vpc.private_dns_zone_id
+  private_dns_zone_name = module.vpc.private_dns_zone_name
 }
 
 
@@ -411,6 +416,10 @@ output "bastion_private_dns_name" {
 
 output "rds_endpoint" {
   value = module.database.rds_endpoint
+}
+
+output "rds_private_dns_name" {
+  value = module.database.rds_private_dns_name
 }
 
 output "eks_cluster_name" {
