@@ -66,6 +66,35 @@ resource "aws_launch_template" "eks_node" {
     http_put_response_hop_limit = 2
   }
 
+  # Raises kubelet's --max-pods above what the AL2023 AMI's built-in
+  # eni-max-pods.txt table would otherwise set. That table is static and
+  # calculated without prefix delegation in mind, so even though vpc-cni
+  # (see addons.tf) can now hand out far more IPs per node, kubelet would
+  # still refuse to schedule past the old low ceiling unless told otherwise.
+  #
+  # Since no custom ami_id is set on the node group, EKS auto-generates the
+  # rest of the nodeadm bootstrap (cluster endpoint/CA/join config) and just
+  # merges this extra NodeConfig fragment into it - we only need to supply
+  # the one field we're overriding.
+  user_data = base64encode(<<-EOT
+    MIME-Version: 1.0
+    Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+    --BOUNDARY
+    Content-Type: application/node.eks.aws
+
+    ---
+    apiVersion: node.eks.aws/v1alpha1
+    kind: NodeConfig
+    spec:
+      kubelet:
+        config:
+          maxPods: ${var.node_max_pods}
+
+    --BOUNDARY--
+  EOT
+  )
+
   # Supplying a launch template with explicit security groups stops EKS from
   # auto-attaching its own managed cluster security group to the nodes - that
   # SG carries the control-plane<->kubelet rules nodes need to actually join
@@ -94,11 +123,11 @@ resource "aws_launch_template" "eks_node" {
 ##################################################################
 
 resource "aws_eks_node_group" "this" {
-  cluster_name    = aws_eks_cluster.this.name
-  node_group_name = "${var.cluster_name}-ng"
-  node_role_arn   = aws_iam_role.eks_node.arn
-  subnet_ids      = var.private_subnet_ids
-  instance_types  = var.node_instance_types
+  cluster_name           = aws_eks_cluster.this.name
+  node_group_name_prefix = "${var.cluster_name}-ng-"
+  node_role_arn          = aws_iam_role.eks_node.arn
+  subnet_ids             = var.private_subnet_ids
+  instance_types         = var.node_instance_types
 
   scaling_config {
     desired_size = var.node_desired_size
@@ -109,6 +138,16 @@ resource "aws_eks_node_group" "this" {
   launch_template {
     id      = aws_launch_template.eks_node.id
     version = aws_launch_template.eks_node.latest_version
+  }
+
+  # Same reasoning as the launch template above - a fixed node_group_name
+  # would collide with itself on any replacement (instance_types, subnets,
+  # etc. all force replacement), since AWS won't let two node groups share
+  # a name even briefly. name_prefix + create_before_destroy lets the new
+  # node group come up and take pods before the old one is torn down -
+  # actual zero-downtime replacement instead of destroy-then-create.
+  lifecycle {
+    create_before_destroy = true
   }
 
   depends_on = [

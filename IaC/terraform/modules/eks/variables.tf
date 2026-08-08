@@ -77,7 +77,7 @@ variable "eks_node_security_group_id" {
 variable "node_instance_types" {
   type        = list(string)
   description = "EC2 instance types for the managed node group."
-  default     = ["t3.small"]
+  default     = ["t3.medium"]
 }
 
 variable "node_disk_size" {
@@ -102,4 +102,10 @@ variable "node_max_size" {
   type        = number
   description = "Maximum worker node count."
   default     = 2
+}
+
+variable "node_max_pods" {
+  type        = number
+  description = "kubelet --max-pods override, applied via the launch template's user_data. Only meaningful because the vpc-cni addon has ENABLE_PREFIX_DELEGATION on (see addons.tf) - the AMI's default max-pods table doesn't account for prefix delegation on its own. 110 is AWS's own commonly recommended ceiling once prefix delegation is enabled, well above what the raw IP math would technically allow, since other things (etcd, kube-proxy iptables rules) also scale with pods-per-node."
+  default     = 110
 }

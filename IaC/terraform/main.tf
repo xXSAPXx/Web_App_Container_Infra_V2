@@ -286,6 +286,24 @@ resource "helm_release" "aws_load_balancer_controller" {
     value = module.eks.alb_controller_irsa_role_arn
   }
 
+  # Terraform has no visibility into the real ALB/target groups/security
+  # groups this controller provisions in response to k8s/ingress.yaml -
+  # those are created by the controller reacting to a plain kubectl-applied
+  # manifest, not by Terraform. Left alone, `terraform destroy` tears down
+  # this release (and eventually the VPC) while that ALB still exists,
+  # leaving orphaned AWS resources and a VPC stuck on DependencyViolation -
+  # hit twice now. Destroy-time provisioners run before the resource
+  # they're attached to is destroyed, so this gives the controller one
+  # last chance to gracefully deprovision its own ALB while it's still
+  # alive to do so. `|| true` so a stale/unreachable kubeconfig can't hang
+  # the whole destroy - k8s/ (not k8s/rendered/) is used since a plain
+  # `kubectl delete -f` only needs kind/name/namespace, it doesn't care
+  # that ingress.yaml's ${ACM_CERT_ARN} placeholder was never envsubst'd.
+  provisioner "local-exec" {
+    when    = destroy
+    command = "kubectl delete -f ${path.module}/../../k8s/ --ignore-not-found --wait --timeout=120s || true"
+  }
+
   depends_on = [module.eks]
 }
 
@@ -409,6 +427,111 @@ resource "kubernetes_secret" "backend_db" {
   }
 
   type = "Opaque"
+}
+
+
+# Dedicated namespace for observability tooling (kube-prometheus-stack etc.)
+# so it gets its own resource budget instead of sharing calc-app's or
+# landing unbounded in default. kubectl describe nodes currently shows
+# ~1.6 vCPU / ~1.8Gi free across both t3.small nodes after calc-app + the
+# platform pods (aws-node, coredns, kube-proxy, ebs-csi, ALB controller,
+# external-dns) - these numbers stay comfortably under that with room to
+# spare for calc-app to grow. Bump them here if a real install needs more.
+resource "kubernetes_namespace" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+
+  depends_on = [module.eks]
+}
+
+# Belt-and-suspenders for the "resources: {}" problem found in
+# kube-prometheus-stack's default values.yaml (most of its containers
+# declare no requests/limits at all, so they'd otherwise be free to consume
+# as much of a node's real CPU/memory as exists). Any container landing in
+# this namespace without its own resources block gets these defaults
+# auto-injected by the API server - a bad `helm install` can no longer go
+# unbounded by accident.
+#
+# "request" = what a container is guaranteed to get, and what the scheduler
+# uses to decide which node has room for it.
+# "limit" = the hard ceiling a container can never exceed at runtime - go
+# over the memory limit and the container gets OOM-killed; go over the CPU
+# limit and it just gets throttled, not killed.
+resource "kubernetes_limit_range" "monitoring" {
+  metadata {
+    name      = "monitoring-default-limits"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+  }
+
+  spec {
+    limit {
+      type = "Container"
+
+      # Applied automatically to any container that doesn't set its own
+      # resources.limits - this is what neutralizes kube-prometheus-stack's
+      # bare "resources: {}" default.
+      default = {
+        cpu    = "500m"  # 0.5 vCPU ceiling
+        memory = "512Mi" # hard cap - OOM-killed if exceeded
+      }
+
+      # Applied automatically to any container that doesn't set its own
+      # resources.requests - this is what the scheduler reserves for it up
+      # front when deciding which node to place it on.
+      default_request = {
+        cpu    = "100m"  # 0.1 vCPU reserved
+        memory = "128Mi" # reserved, not a hard cap by itself
+      }
+
+      # Even a container that DOES set its own resources can't ask for more
+      # than this, no matter what its own values.yaml says.
+      max = {
+        cpu    = "1"
+        memory = "1Gi"
+      }
+
+      # ...or less than this - stops something being configured so small
+      # it gets starved/killed constantly.
+      min = {
+        cpu    = "10m"
+        memory = "16Mi"
+      }
+    }
+  }
+}
+
+# Namespace-wide hard ceiling - unlike the LimitRange above (which only sets
+# per-container defaults/bounds), this caps the *sum* across every object in
+# the namespace. Once hit, the API server rejects new pods/PVCs outright
+# instead of letting them schedule and starve calc-app or the platform pods.
+resource "kubernetes_resource_quota" "monitoring" {
+  metadata {
+    name      = "monitoring-quota"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+  }
+
+  spec {
+    hard = {
+      # Sum of every container's CPU/memory *request* in this namespace
+      # can't exceed these - blocks new pods once the reserved total is hit.
+      "requests.cpu"    = "1500m" # 1.5 vCPU total reserved across all pods here
+      "requests.memory" = "2Gi"   # 2Gi total reserved across all pods here
+
+      # Sum of every container's CPU/memory *limit* can't exceed these -
+      # the absolute ceiling this namespace could ever consume at runtime.
+      "limits.cpu"    = "8"   # 8 vCPU max even if everything spikes at once
+      "limits.memory" = "8Gi" # 8Gi max even if everything spikes at once
+
+      # Total size of all PersistentVolumeClaims (EBS volumes) combined.
+      "requests.storage" = "15Gi"
+
+      # Simple headcounts - cheap guardrails against a chart or a typo'd
+      # replica count spinning up way more objects than intended.
+      "persistentvolumeclaims" = "5"  # max number of PVCs/EBS volumes
+      "pods"                   = "20" # max number of pods
+    }
+  }
 }
 
 
