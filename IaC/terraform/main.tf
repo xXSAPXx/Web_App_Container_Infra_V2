@@ -535,6 +535,111 @@ resource "kubernetes_resource_quota" "monitoring" {
 }
 
 
+# One general-purpose StorageClass for the whole cluster - gp3 is AWS's
+# cheapest current-generation SSD tier (successor to gp2, actually cheaper
+# per-GB and better baseline performance). Left iops/throughput unset on
+# purpose - that keeps it on gp3's free baseline (3000 IOPS / 125 MB/s
+# regardless of size), plenty for Prometheus/Alertmanager/Grafana at this
+# scale, and the actual "cheap" part - setting either would raise the bill.
+resource "kubernetes_storage_class" "ebs_gp3" {
+  metadata {
+    name = "ebs-gp3"
+
+    # No default StorageClass exists on EKS out of the box (unlike GKE,
+    # which auto-provisions one). Marking this default means any PVC that
+    # doesn't set storageClassName just uses this one automatically.
+    annotations = {
+      "storageclass.kubernetes.io/is-default-class" = "true"
+    }
+  }
+
+  storage_provisioner = "ebs.csi.aws.com"
+  reclaim_policy      = "Delete" # EBS volume dies with the PVC - matches
+                                  # the destroy-per-session workflow; "Retain"
+                                  # would leave real, billed EBS volumes
+                                  # orphaned after every terraform destroy
+  volume_binding_mode    = "WaitForFirstConsumer" # delays volume creation
+                                  # until a pod is actually scheduled, so
+                                  # the volume lands in the SAME AZ as the
+                                  # pod - see modules/eks's AZ-locking notes
+  allow_volume_expansion = false
+
+  parameters = {
+    type      = "gp3"
+    encrypted = "true"
+  }
+
+  depends_on = [module.eks] # needs the ebs_csi addon (modules/eks/addons.tf)
+}
+
+
+# Grafana admin credentials - Terraform-generated and Terraform-owned,
+# replacing the chart's own default behavior (a fresh random password
+# generated on every install, thrown away with nothing to retrieve it from
+# except `kubectl get secret`). Same reasoning as random_password.jwt_secret
+# above. Referenced via grafana.admin.existingSecret in
+# values/kube-prometheus-stack.yaml.
+resource "random_password" "grafana_admin_password" {
+  length  = 24
+  special = false
+}
+
+resource "kubernetes_secret" "grafana_admin" {
+  metadata {
+    name      = "grafana-admin-credentials"
+    namespace = kubernetes_namespace.monitoring.metadata[0].name
+  }
+
+  data = {
+    admin-user     = "admin"
+    admin-password = random_password.grafana_admin_password.result
+  }
+
+  type = "Opaque"
+}
+
+
+# kube-prometheus-stack - Prometheus + Alertmanager + Grafana + node-exporter +
+# kube-state-metrics + the Prometheus Operator, replacing the manual
+# `helm install` used earlier to explore it. Version pinned to the one
+# already validated by hand against this namespace's quota.
+#
+# Values live in their own file rather than inline `set` blocks - this
+# chart's config surface (thousands of lines in its own values.yaml) makes
+# `set` impractical the way it's used for aws_load_balancer_controller/
+# external_dns above.
+resource "helm_release" "kube_prometheus_stack" {
+  name       = "my-kube-prometheus-stack"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  version    = "88.2.0"
+
+  values = [
+    file("${path.module}/values/kube-prometheus-stack.yaml")
+  ]
+
+  # Terraform-computed value (an ARN), so it goes through `set` rather than
+  # the static values file - same reasoning as aws_load_balancer_controller's
+  # serviceAccount annotation above. Grants ec2_sd_configs (see the values
+  # file) permission to actually call ec2:DescribeInstances.
+  set {
+    name  = "prometheus.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = module.eks.prometheus_irsa_role_arn
+  }
+
+  # LimitRange/ResourceQuota must exist before any of this chart's pods do -
+  # both apply at admission time, not retroactively. The StorageClass must
+  # exist before any PVC referencing it by name (once values.yaml turns on
+  # persistence) can bind.
+  depends_on = [
+    kubernetes_namespace.monitoring,
+    kubernetes_limit_range.monitoring,
+    kubernetes_resource_quota.monitoring,
+    kubernetes_storage_class.ebs_gp3,
+    kubernetes_secret.grafana_admin,
+  ]
+}
 
 
 # Print all dynamic variables passed to specified modules after terrafrom deployment:
@@ -576,4 +681,10 @@ output "ecr_backend_repository_url" {
 output "acm_certificate_arn" {
   description = "Pass this into the alb.ingress.kubernetes.io/certificate-arn annotation on k8s/ingress.yaml"
   value       = module.alb_ssl_cert_validation.alb_certificate_arn
+}
+
+output "grafana_admin_password" {
+  description = "Grafana admin login - retrieve with: terraform output -raw grafana_admin_password"
+  value       = random_password.grafana_admin_password.result
+  sensitive   = true
 }

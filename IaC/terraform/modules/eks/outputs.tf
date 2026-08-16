@@ -32,3 +32,7 @@ output "cluster_security_group_id" {
 output "alb_controller_irsa_role_arn" {
   value = aws_iam_role.alb_controller_irsa.arn
 }
+
+output "prometheus_irsa_role_arn" {
+  value = aws_iam_role.prometheus_irsa.arn
+}

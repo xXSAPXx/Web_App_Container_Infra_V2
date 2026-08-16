@@ -28,8 +28,10 @@ resource "aws_security_group" "rds_sg" {
 
 ########################################################################
 # Security Group for the Public EC2 - Bastion server (SSH / DB testing):
-# Prometheus-specific ports (9090/9100) were dropped along with the
-# Prometheus role - this box is now a plain jump host.
+# Prometheus-specific ports (9090/9100) were dropped along with the old
+# self-hosted Prometheus role - re-added below, scoped much tighter this
+# time (EKS node SG only, not a broad CIDR) for the in-cluster Prometheus's
+# EC2 Service Discovery to scrape this box's node_exporter.
 ########################################################################
 
 resource "aws_security_group" "bastion_prometheus_sg" {
@@ -49,6 +51,14 @@ resource "aws_security_group" "bastion_prometheus_sg" {
     to_port     = -1
     protocol    = "icmp"
     cidr_blocks = [var.bastion_host_cidr_block, var.vpc_cidr_block] # Ping from outside and inside the VPC.
+  }
+
+  ingress {
+    description     = "node_exporter - scraped by the in-cluster Prometheus via EC2 Service Discovery"
+    from_port       = 9100
+    to_port         = 9100
+    protocol        = "tcp"
+    security_groups = [aws_security_group.eks_node_sg.id]
   }
 
   egress {

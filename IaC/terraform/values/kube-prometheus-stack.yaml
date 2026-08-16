@@ -1,0 +1,163 @@
+# Values for helm_release.kube_prometheus_stack in ../main.tf
+#
+# Overrides are added here deliberately, one at a time - see main.tf's
+# comment on this resource for why this isn't a full copy of the chart's
+# own (huge) default values.yaml.
+
+# Persistent storage for the three components that hold real state -
+# without this, all three fall back to emptyDir (node-local, wiped on
+# every pod restart). All three use the cluster's default StorageClass
+# (kubernetes_storage_class.ebs_gp3 in ../main.tf) implicitly - no need to
+# name it explicitly since it's marked storageclass.kubernetes.io/is-default-class.
+#
+# Sizes total 4Gi - right-sized for a session that runs a few hours then
+# gets destroyed (reclaimPolicy: Delete means the EBS volume dies with the
+# PVC, nothing accumulates between sessions), not for long-term retention.
+# A few hours of scraping this small a cluster is realistically tens of MB
+# of actual TSDB data - 2Gi is already a 10x+ safety margin over that.
+# 1Gi is AWS's own gp3 minimum volume size, and plenty for Alertmanager's
+# tiny notification-state log and Grafana's SQLite dashboards/settings db.
+
+prometheus:
+  prometheusSpec:
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+    # EC2 Service Discovery - lets Prometheus scrape node_exporter running
+    # on plain EC2 instances (the bastion, or any future box), not just
+    # in-cluster pods. Needs prometheus.serviceAccount.annotations set in
+    # ../main.tf's helm_release (grants ec2:DescribeInstances via IRSA) and
+    # the bastion's security group allowing the EKS node SG inbound on
+    # :9100 (modules/security_groups/main.tf).
+    additionalScrapeConfigs:
+      - job_name: "ec2-node-exporter"
+        ec2_sd_configs:
+          - region: us-east-1
+            port: 9100
+        relabel_configs:
+          # Only scrape instances explicitly opted in - without this,
+          # every EC2 instance in the account gets "discovered" and then
+          # scraped, tagged or not.
+          - source_labels: [__meta_ec2_tag_Prometheus]
+            regex: "true"
+            action: keep
+
+          # ec2_sd_configs gives the instance's IP, not a ready ip:port
+          # target - this builds __address__ from it.
+          - source_labels: [__meta_ec2_private_ip]
+            target_label: __address__
+            replacement: "${1}:9100"
+
+          # Overwrites the default "instance" label (which would otherwise
+          # be the raw ip:port) with the EC2 Name tag, for readability in
+          # Grafana. Accepted tradeoff: two EC2s sharing a Name tag would
+          # collide and one would silently stop being scraped - acceptable
+          # here since there's realistically only ever the bastion tagged.
+          - source_labels: [__meta_ec2_tag_Name]
+            target_label: instance
+
+    # Right-sized per-component instead of relying on the monitoring
+    # namespace's LimitRange blanket default (100m/128Mi request,
+    # 500m/512Mi limit for every container that doesn't set its own) -
+    # that default is a safety net, not a substitute for actually sizing
+    # the one component that does real work here. limits stay at/under
+    # the LimitRange's own max (cpu=1, memory=1Gi).
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 1Gi
+
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+grafana:
+  persistence:
+    enabled: true
+    type: pvc
+    accessModes: ["ReadWriteOnce"]
+    size: 1Gi
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  # Real, Terraform-managed credentials instead of the chart's own
+  # freshly-random-generated-per-install password - see
+  # kubernetes_secret.grafana_admin in ../main.tf. Secret NAME is safe to
+  # hardcode here (it's just a reference, not sensitive) - only the actual
+  # password value needs to come from Terraform.
+  admin:
+    existingSecret: "grafana-admin-credentials"
+    userKey: admin-user
+    passwordKey: admin-password
+
+# kube-state-metrics exposes the state of Kubernetes OBJECTS themselves
+# (pod phase, deployment replica counts, PVC status, etc.) as Prometheus
+# metrics - different from node-exporter (host-level: CPU/disk/network)
+# and cAdvisor (per-container resource usage). "kubeStateMetrics" toggles
+# whether the chart deploys it at all; "kube-state-metrics" (hyphenated)
+# configures the actual subchart, including its resources below.
+kubeStateMetrics:
+  enabled: true
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# The Prometheus Operator itself - the controller watching the Prometheus/
+# Alertmanager/ServiceMonitor/etc. CRDs and generating real config from
+# them (see the earlier explanation of the Operator pattern). Its own
+# resource footprint, separate from the Prometheus/Alertmanager pods it manages.
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# node_exporter DaemonSet - one pod per node, exposing host-level metrics
+# (CPU/memory/disk/network) on :9100. Same exporter as the one manually
+# installed on the bastion for EC2 Service Discovery above, just running
+# in-cluster instead.
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
