@@ -286,24 +286,6 @@ resource "helm_release" "aws_load_balancer_controller" {
     value = module.eks.alb_controller_irsa_role_arn
   }
 
-  # Terraform has no visibility into the real ALB/target groups/security
-  # groups this controller provisions in response to k8s/ingress.yaml -
-  # those are created by the controller reacting to a plain kubectl-applied
-  # manifest, not by Terraform. Left alone, `terraform destroy` tears down
-  # this release (and eventually the VPC) while that ALB still exists,
-  # leaving orphaned AWS resources and a VPC stuck on DependencyViolation -
-  # hit twice now. Destroy-time provisioners run before the resource
-  # they're attached to is destroyed, so this gives the controller one
-  # last chance to gracefully deprovision its own ALB while it's still
-  # alive to do so. `|| true` so a stale/unreachable kubeconfig can't hang
-  # the whole destroy - k8s/ (not k8s/rendered/) is used since a plain
-  # `kubectl delete -f` only needs kind/name/namespace, it doesn't care
-  # that ingress.yaml's ${ACM_CERT_ARN} placeholder was never envsubst'd.
-  provisioner "local-exec" {
-    when    = destroy
-    command = "kubectl delete -f ${path.module}/../../k8s/ --ignore-not-found --wait --timeout=120s || true"
-  }
-
   depends_on = [module.eks]
 }
 
@@ -383,6 +365,36 @@ resource "helm_release" "external_dns" {
   }
 
   depends_on = [kubernetes_secret.cloudflare_api_token, helm_release.aws_load_balancer_controller]
+}
+
+
+# Deletes k8s/ (specifically the Ingress) at destroy time, while BOTH
+# controllers below are still alive to react to it. This has to live on its
+# own null_resource rather than a provisioner on either helm_release directly:
+# external_dns depends_on aws_load_balancer_controller, so Terraform destroys
+# external_dns FIRST (dependents are destroyed before what they depend on) -
+# by the time a provisioner on aws_load_balancer_controller fired, external-dns
+# was already gone and never saw the Ingress deletion, so it never synced the
+# deletion to Cloudflare (confirmed live: CNAME + 2 TXT ownership records were
+# left dangling after a clean destroy that DID correctly deprovision the ALB
+# itself, since the ALB controller was still alive for that one).
+# Depending on both helm releases here makes this null_resource a dependent of
+# both, so it's destroyed before either of them - guaranteeing the Ingress
+# delete fires while both controllers are still up. The sleep afterward gives
+# external-dns's reconcile loop (default --interval=1m, no --events flag set)
+# a real chance to run before its own pod gets torn down next.
+resource "null_resource" "destroy_k8s_manifests" {
+  depends_on = [helm_release.aws_load_balancer_controller, helm_release.external_dns]
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "kubectl delete -f ${path.module}/../../k8s/ --ignore-not-found --wait --timeout=120s || true"
+  }
+
+  provisioner "local-exec" {
+    when    = destroy
+    command = "sleep 75"
+  }
 }
 
 

@@ -32,6 +32,13 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    # Used only for null_resource.destroy_k8s_manifests - lets us pin a
+    # destroy-time provisioner to a point in the dependency graph that isn't
+    # tied to any one real resource's own lifecycle.
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
