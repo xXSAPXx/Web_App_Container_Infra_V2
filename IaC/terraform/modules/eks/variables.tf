@@ -82,7 +82,7 @@ variable "node_instance_types" {
 
 variable "node_disk_size" {
   type        = number
-  description = "Root EBS volume size (GiB) for worker nodes."
+  description = "Root EBS volume size (GiB) for worker nodes. 20 is not an arbitrary choice - the EKS-optimized AMI's root volume is created from a pre-baked snapshot, and EC2 hard-rejects any volume smaller than the snapshot it's sourced from (confirmed: 10 fails with 'Volume of size 10GB is smaller than snapshot ..., expect size >= 20GB'). Measured real usage right after a cold start (OS + every platform/monitoring image pulled) was ~5Gi/20Gi (25%), so there's real headroom - it just can't be reclaimed by shrinking this value."
   default     = 20
 }
 

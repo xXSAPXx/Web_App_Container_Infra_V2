@@ -49,15 +49,9 @@ resource "cloudflare_dns_record" "cert_validation" {
     ignore_changes = [
       name,
       content,
-      meta,
-      modified_on,
-      created_on,
       comment,
-      comment_modified_on,
       settings,
-      proxiable,
       tags,
-      tags_modified_on,
     ]
   }
 }

@@ -161,3 +161,15 @@ prometheus-node-exporter:
     limits:
       cpu: 50m
       memory: 64Mi
+
+  # Without this, every in-cluster node-exporter target's "instance" label
+  # is just its raw pod IP:port - unreadable, and indistinguishable from
+  # each other in Grafana. Same fix as the bastion's EC2 SD relabeling
+  # above, just a different source label: __meta_kubernetes_pod_node_name
+  # is always available for pod-based service discovery and gives the
+  # actual Kubernetes node name (e.g. ip-10-0-86-93.ec2.internal).
+  prometheus:
+    monitor:
+      relabelings:
+        - sourceLabels: ["__meta_kubernetes_pod_node_name"]
+          targetLabel: instance
