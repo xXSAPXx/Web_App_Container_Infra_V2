@@ -61,6 +61,11 @@ resource "aws_security_group" "bastion_prometheus_sg" {
     security_groups = [aws_security_group.eks_node_sg.id]
   }
 
+  # No inbound rule needed for Tailscale - the bastion connects outbound to
+  # Tailscale's coordination service and NAT-traverses from there, unlike
+  # raw WireGuard which needed a scoped inbound UDP rule for the client to
+  # reach it directly.
+
   egress {
     from_port   = 0
     to_port     = 0

@@ -69,4 +69,15 @@ variable "bastion_host_tag_name" {
 }
 
 
+##########################################
+# TAILSCALE VPN VARIABLES
+##########################################
+
+variable "tailscale_authkey" {
+  type        = string
+  sensitive   = true
+  description = "Tailscale ephemeral, reusable auth key the bastion uses to join the tailnet non-interactively"
+}
+
+
 

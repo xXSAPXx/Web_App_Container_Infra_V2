@@ -73,3 +73,29 @@ ssh -A -i /c/Users/simeo/Desktop/IT_General/KeyPairs/Test_env ec2-user@<BASTION_
 
 9) Connect to servers in the private subnets using bastion ec2-user:  
 ssh ec2-user@ip-10-0-0-42.ec2.internal
+
+
+##### Tailscale VPN - private access into the VPC (Grafana, etc.) #####
+
+The bastion joins the tailnet automatically on first boot (userdata) as a
+subnet router advertising 10.0.0.0/16 - nothing to generate or copy off the
+box, unlike the raw WireGuard version this replaced.
+
+1) Approve the advertised route (one-time per new/recreated bastion, since
+   the auth key is ephemeral and each fresh instance is a "new" node):  
+   https://login.tailscale.com/admin/machines -> bastion-vpn -> Edit route settings -> enable 10.0.0.0/16
+
+2) Install Tailscale on your PC and log in with the same account:  
+   https://tailscale.com/download/windows
+
+3) Verify the tunnel is up [PowerShell]:  
+   tailscale status
+   (bastion-vpn should show up, "idle" or with a recent handshake)
+
+4) Verify VPC access through the tunnel, e.g. the private Route53 zone:  
+   ping bastion.internal.xxsapxx.local
+
+Note: internal.xxsapxx.local won't resolve until Split DNS is configured
+once in the admin console (Settings -> DNS -> Add nameserver, restrict to
+that domain, pointed at 10.0.0.2 - the VPC's AmazonProvidedDNS resolver).
+Until then, reach services by private IP instead of hostname.

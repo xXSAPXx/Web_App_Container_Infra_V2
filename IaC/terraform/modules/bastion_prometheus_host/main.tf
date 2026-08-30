@@ -4,7 +4,9 @@
 ###################################################################################
 
 locals {
-  bastion_prometheus_host_userdata = templatefile("${path.module}/userdata_for_bastion_prometheus_host.tpl", {})
+  bastion_prometheus_host_userdata = templatefile("${path.module}/userdata_for_bastion_prometheus_host.tpl", {
+    tailscale_authkey = var.tailscale_authkey
+  })
 }
 
 

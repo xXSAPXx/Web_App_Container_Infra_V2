@@ -19,3 +19,7 @@ rds_db_password             = <EXAMPLE>
 # Cloudflare DNS is now kept in sync automatically by external-dns running
 # in-cluster (see helm_release.external_dns in main.tf) - no DNS variable
 # needed here anymore.
+
+# Tailscale ephemeral, reusable auth key - generate at
+# https://login.tailscale.com/admin/settings/keys
+tailscale_authkey          = <EXAMPLE>

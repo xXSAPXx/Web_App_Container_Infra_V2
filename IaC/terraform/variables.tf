@@ -43,3 +43,19 @@ variable "rds_db_password" {
   sensitive   = true
   description = "Password for the backend to connect to RDS with (must already exist in the restored snapshot)"
 }
+
+
+# Tailscale VPN - the bastion joins as a subnet router (see
+# modules/bastion_prometheus_host) advertising the VPC CIDR, giving private
+# access to in-VPC-only services (Grafana, etc.) without managing our own
+# WireGuard keys/config or opening an inbound port at all - Tailscale
+# connects outbound and NAT-traverses via their coordination service.
+# Generate an EPHEMERAL, REUSABLE auth key at
+# https://login.tailscale.com/admin/settings/keys - ephemeral so the node
+# auto-removes from the tailnet when the bastion is destroyed each session,
+# reusable so the same key works across every fresh bastion, not just once.
+variable "tailscale_authkey" {
+  type        = string
+  sensitive   = true
+  description = "Tailscale ephemeral, reusable auth key the bastion uses to join the tailnet non-interactively"
+}

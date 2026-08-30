@@ -193,6 +193,9 @@ module "bastion_prometheus" {
   volume_type = "gp2"
 
   bastion_host_tag_name = "bastion-host"
+
+  # --- Tailscale VPN Settings ---
+  tailscale_authkey = var.tailscale_authkey
 }
 
 
