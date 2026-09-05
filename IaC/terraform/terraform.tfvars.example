@@ -23,3 +23,27 @@ rds_db_password             = <EXAMPLE>
 # Tailscale ephemeral, reusable auth key - generate at
 # https://login.tailscale.com/admin/settings/keys
 tailscale_authkey          = <EXAMPLE>
+
+# Tailscale OAuth client for the Kubernetes operator (exposes Grafana onto
+# the tailnet) - two setup steps first, both one-time in the admin console:
+#
+# 1) Add the tag:k8s-operator/tag:k8s tags to the tailnet's ACL policy
+#    (https://login.tailscale.com/admin/acls) - they don't exist by default
+#    on a fresh tailnet, and the OAuth client below can't be tagged with a
+#    tag that doesn't exist yet:
+#      "tagOwners": {
+#        "tag:k8s-operator": [],
+#        "tag:k8s": ["tag:k8s-operator"]
+#      }
+#    tag:k8s-operator is what the operator itself runs as; tag:k8s is what
+#    it tags the proxy devices it creates with (Grafana's, and any future
+#    one) - the second line makes the operator an owner of tag:k8s so it's
+#    actually allowed to hand that tag to the devices it creates.
+#
+# 2) Create the OAuth client itself at
+#    https://login.tailscale.com/admin/settings/oauth - write scope on
+#    General/Services, Devices/Core, and Keys/Auth Keys, tagged
+#    tag:k8s-operator (not tag:k8s - that's for the proxies, not the
+#    operator itself).
+tailscale_oauth_client_id     = <EXAMPLE>
+tailscale_oauth_client_secret = <EXAMPLE>

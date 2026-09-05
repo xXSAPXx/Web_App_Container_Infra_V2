@@ -599,6 +599,41 @@ resource "random_password" "grafana_admin_password" {
   special = false
 }
 
+# Tailscale Kubernetes Operator - lets Grafana (see grafana.ingress in
+# values/kube-prometheus-stack.yaml) be exposed directly onto the tailnet
+# via a `tailscale`-class Ingress, with a free MagicDNS hostname and a real
+# auto-provisioned HTTPS cert. No AWS networking at all - the operator makes
+# an outbound-only connection to Tailscale's control plane per proxy it
+# creates, same pattern as the bastion's subnet router in
+# modules/bastion_prometheus_host. Deliberately chosen over building a
+# second internal ALB + a second external-dns + a new IRSA role for the
+# private Route53 zone - see the bastion module README for the full
+# comparison and mechanism notes.
+resource "helm_release" "tailscale_operator" {
+  name             = "tailscale-operator"
+  repository       = "https://pkgs.tailscale.com/helmcharts"
+  chart            = "tailscale-operator"
+  namespace        = "tailscale"
+  create_namespace = true
+  version          = "1.102.3"
+
+  # set_sensitive (not set) - these are real OAuth credentials, not just
+  # references to something else (unlike every other helm_release in this
+  # file, which only ever passes ARNs/resource names through `set`).
+  set_sensitive {
+    name  = "oauth.clientId"
+    value = var.tailscale_oauth_client_id
+  }
+
+  set_sensitive {
+    name  = "oauth.clientSecret"
+    value = var.tailscale_oauth_client_secret
+  }
+
+  depends_on = [module.eks]
+}
+
+
 resource "kubernetes_secret" "grafana_admin" {
   metadata {
     name      = "grafana-admin-credentials"
@@ -653,6 +688,7 @@ resource "helm_release" "kube_prometheus_stack" {
     kubernetes_resource_quota.monitoring,
     kubernetes_storage_class.ebs_gp3,
     kubernetes_secret.grafana_admin,
+    helm_release.tailscale_operator,
   ]
 }
 

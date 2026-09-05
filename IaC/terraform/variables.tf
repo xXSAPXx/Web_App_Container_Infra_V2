@@ -59,3 +59,28 @@ variable "tailscale_authkey" {
   sensitive   = true
   description = "Tailscale ephemeral, reusable auth key the bastion uses to join the tailnet non-interactively"
 }
+
+
+# Tailscale Kubernetes Operator - exposes Grafana directly onto the tailnet
+# via a tailscale-class Ingress (see values/kube-prometheus-stack.yaml),
+# instead of an internal ALB + a second external-dns + a new IRSA role.
+# Needs an OAuth client (not a plain auth key - the operator creates/manages
+# devices dynamically via the Tailscale API), created at
+# https://login.tailscale.com/admin/settings/oauth with write scope on
+# General/Services, Devices/Core, and Keys/Auth Keys, tagged tag:k8s-operator.
+# Also needs a one-time tagOwners addition in the tailnet's ACL policy:
+#   "tagOwners": { "tag:k8s-operator": [], "tag:k8s": ["tag:k8s-operator"] }
+# and "HTTPS Certificates" enabled under the admin console's DNS page, or
+# Grafana's Ingress will never get a valid cert. See the bastion module
+# README for the full walkthrough.
+variable "tailscale_oauth_client_id" {
+  type        = string
+  sensitive   = true
+  description = "Tailscale OAuth client ID for the Kubernetes operator"
+}
+
+variable "tailscale_oauth_client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Tailscale OAuth client secret paired with tailscale_oauth_client_id"
+}

@@ -118,6 +118,26 @@ grafana:
     userKey: admin-user
     passwordKey: admin-password
 
+  # Exposes Grafana directly onto the tailnet via the Tailscale Kubernetes
+  # Operator (helm_release.tailscale_operator in ../main.tf) - no ALB, no
+  # public DNS record, no cert of our own to manage. The operator derives
+  # the resulting MagicDNS hostname from tls[0].hosts[0] (confirmed via
+  # `helm template` against this exact chart version, and Tailscale's own
+  # docs) - "grafana" here becomes https://grafana.<your-tailnet>.ts.net,
+  # with Tailscale auto-provisioning a real HTTPS cert for it (requires
+  # "HTTPS Certificates" enabled once in the admin console's DNS page - see
+  # the bastion module README). No secretName under tls: on purpose -
+  # that's for cert-manager-style controllers; Tailscale manages the cert
+  # itself and ignores it.
+  ingress:
+    enabled: true
+    ingressClassName: tailscale
+    hosts:
+      - grafana
+    tls:
+      - hosts:
+          - grafana
+
 # kube-state-metrics exposes the state of Kubernetes OBJECTS themselves
 # (pod phase, deployment replica counts, PVC status, etc.) as Prometheus
 # metrics - different from node-exporter (host-level: CPU/disk/network)
