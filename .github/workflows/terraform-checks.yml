@@ -4,17 +4,30 @@ on:
   pull_request:
     paths:
       - "IaC/terraform/**"
+      - "IaC/terraform-ecr-repos/**"
   push:
     branches: [main]
     paths:
       - "IaC/terraform/**"
+      - "IaC/terraform-ecr-repos/**"
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+
+    # Two independent Terraform roots (separate state, separate providers.tf)
+    # - IaC/terraform (ephemeral cluster stack) and IaC/terraform-ecr-repos
+    # (the persistent one). Same steps for both, just a different
+    # working-directory - a matrix avoids duplicating the whole job.
+    strategy:
+      matrix:
+        working_directory:
+          - IaC/terraform
+          - IaC/terraform-ecr-repos
+
     defaults:
       run:
-        working-directory: IaC/terraform
+        working-directory: ${{ matrix.working_directory }}
 
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +37,9 @@ jobs:
       - name: terraform fmt
         run: terraform fmt -check -recursive
 
+      # -backend=false: validate only needs provider schemas, not real
+      # state, so this needs no AWS credentials for either root - even
+      # terraform-ecr-repos, despite its real S3 backend normally.
       - name: terraform init
         run: terraform init -backend=false
 
