@@ -570,13 +570,13 @@ resource "kubernetes_storage_class" "ebs_gp3" {
 
   storage_provisioner = "ebs.csi.aws.com"
   reclaim_policy      = "Delete" # EBS volume dies with the PVC - matches
-                                  # the destroy-per-session workflow; "Retain"
-                                  # would leave real, billed EBS volumes
-                                  # orphaned after every terraform destroy
-  volume_binding_mode    = "WaitForFirstConsumer" # delays volume creation
-                                  # until a pod is actually scheduled, so
-                                  # the volume lands in the SAME AZ as the
-                                  # pod - see modules/eks's AZ-locking notes
+  # the destroy-per-session workflow; "Retain"
+  # would leave real, billed EBS volumes
+  # orphaned after every terraform destroy
+  volume_binding_mode = "WaitForFirstConsumer" # delays volume creation
+  # until a pod is actually scheduled, so
+  # the volume lands in the SAME AZ as the
+  # pod - see modules/eks's AZ-locking notes
   allow_volume_expansion = false
 
   parameters = {
