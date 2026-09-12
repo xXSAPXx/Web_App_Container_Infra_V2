@@ -21,3 +21,29 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+
+  # Base image tags pinned in each Dockerfile (node:24-alpine,
+  # httpd:2.4-alpine) - directory is wherever the Dockerfile itself lives,
+  # same convention as npm above.
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+
+  # Provider version constraints (hashicorp/aws ~> 5.0, etc.) in each of
+  # the two independent Terraform roots - same reasoning as
+  # terraform-checks.yml treating them as separate matrix legs.
+  - package-ecosystem: "terraform"
+    directory: "/IaC/terraform"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "terraform"
+    directory: "/IaC/terraform-ecr-repos"
+    schedule:
+      interval: "weekly"
