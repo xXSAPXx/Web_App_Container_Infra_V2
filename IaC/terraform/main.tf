@@ -739,3 +739,9 @@ output "grafana_admin_password" {
   value       = random_password.grafana_admin_password.result
   sensitive   = true
 }
+
+
+# TEMPORARY - deliberately broken for a GitHub Actions CI demo. Do not merge.
+locals {
+  ci_demo_broken = var.this_variable_does_not_exist
+}
