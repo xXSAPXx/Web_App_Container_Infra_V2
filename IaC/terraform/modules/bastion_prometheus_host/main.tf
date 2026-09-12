@@ -31,8 +31,8 @@ resource "aws_instance" "bastion_prometheus" {
   tags = {
     Name       = var.bastion_host_tag_name
     Prometheus = "true" # matches the ec2_sd_configs relabel filter in
-                         # values/kube-prometheus-stack.yaml - anything
-                         # without this tag is ignored, not just this box
+    # values/kube-prometheus-stack.yaml - anything
+    # without this tag is ignored, not just this box
   }
 
 }
