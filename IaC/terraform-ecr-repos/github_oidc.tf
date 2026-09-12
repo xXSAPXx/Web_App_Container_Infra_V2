@@ -53,6 +53,11 @@ resource "aws_iam_role" "ecr_push" {
 # regardless of which repos you actually push to (documented AWS
 # behavior, not a scoping mistake here). Every other action is scoped to
 # just these two repo ARNs.
+#
+# BatchGetImage/GetDownloadUrlForLayer are pull-side actions, but push
+# still needs them - the registry protocol does an existence check
+# against the target repo before uploading, confirmed live via a failed
+# push. Matches AWS's own reference policy for ECR push.
 data "aws_iam_policy_document" "ecr_push_permissions" {
   statement {
     effect    = "Allow"
@@ -64,6 +69,8 @@ data "aws_iam_policy_document" "ecr_push_permissions" {
     effect = "Allow"
     actions = [
       "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
       "ecr:PutImage",
       "ecr:InitiateLayerUpload",
       "ecr:UploadLayerPart",
