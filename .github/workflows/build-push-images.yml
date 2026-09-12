@@ -56,7 +56,7 @@ jobs:
       # short SHA is what a rollback would actually key off of, since
       # it's traceable back to an exact commit and never gets reused.
       - name: Build and push ${{ matrix.service }} image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.dockerfile_dir }}
           push: true
