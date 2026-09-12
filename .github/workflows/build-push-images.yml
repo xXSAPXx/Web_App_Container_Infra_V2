@@ -43,12 +43,23 @@ jobs:
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@v2
 
-      # Tagged by commit SHA, not "latest" - so every image is traceable
-      # back to the exact commit that produced it, and a rollback just
-      # means deploying a known-good SHA instead of guessing.
+      # GITHUB_SHA is the full 40-char commit SHA - not something anyone
+      # wants to type/read, so this trims it the same way GitHub's own UI
+      # displays short SHAs.
+      - name: Set short SHA
+        id: vars
+        run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      # Two tags on the same image, not a choice between them: v<run
+      # number> is what you'd reference in conversation/dashboards
+      # (auto-incrementing, not semantic - just "the Nth build"), the
+      # short SHA is what a rollback would actually key off of, since
+      # it's traceable back to an exact commit and never gets reused.
       - name: Build and push ${{ matrix.service }} image
         uses: docker/build-push-action@v6
         with:
           context: ${{ matrix.dockerfile_dir }}
           push: true
-          tags: ${{ steps.ecr-login.outputs.registry }}/${{ matrix.ecr_repo }}:${{ github.sha }}
+          tags: |
+            ${{ steps.ecr-login.outputs.registry }}/${{ matrix.ecr_repo }}:v${{ github.run_number }}
+            ${{ steps.ecr-login.outputs.registry }}/${{ matrix.ecr_repo }}:${{ steps.vars.outputs.short_sha }}
