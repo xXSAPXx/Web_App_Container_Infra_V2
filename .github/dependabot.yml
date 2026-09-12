@@ -5,6 +5,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
   # Real application dependencies (unlike the actions above, these are
   # what the 18 vulnerabilities on main are almost certainly coming from -
@@ -15,9 +18,53 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # Base image tags pinned in each Dockerfile (node:24-alpine,
+  # httpd:2.4-alpine) - directory is wherever the Dockerfile itself lives,
+  # same convention as npm above.
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "docker"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  # Provider version constraints (hashicorp/aws ~> 5.0, etc.) in each of
+  # the two independent Terraform roots - same reasoning as
+  # terraform-checks.yml treating them as separate matrix legs.
+  - package-ecosystem: "terraform"
+    directory: "/IaC/terraform"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "terraform"
+    directory: "/IaC/terraform-ecr-repos"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
