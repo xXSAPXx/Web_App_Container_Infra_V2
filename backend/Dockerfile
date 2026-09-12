@@ -3,7 +3,7 @@
 # Base image
 # Use the official Node.js Alpine image as a base for the backend service: 
 # -----------------------------------------------------------------------------------------------
-FROM node:24-alpine AS base
+FROM node:26-alpine AS base
 WORKDIR /app
 
 # -----------------------------------------------------------------------------------------------
