@@ -1,5 +1,11 @@
 name: Terraform Checks
 
+# This workflow only reads the repo (checkout, fmt, validate) - it never
+# needs to write anything back via the GITHUB_TOKEN, so scope it down from
+# the default (broader) token permissions instead of leaving it implicit.
+permissions:
+  contents: read
+
 on:
   pull_request:
     paths:
