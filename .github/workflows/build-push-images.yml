@@ -1,0 +1,54 @@
+name: Build and Push Images to AWS ECR
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+
+# id-token: write is what lets this workflow request an OIDC token from
+# GitHub at all - without it, the AWS credentials step below has nothing
+# to hand AWS, regardless of the IAM role's trust policy being correct.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-push:
+    runs-on: ubuntu-latest
+
+    # One job definition, run twice with different inputs - avoids writing
+    # near-identical steps for frontend and backend separately.
+    strategy:
+      matrix:
+        include:
+          - service: frontend
+            dockerfile_dir: frontend
+            ecr_repo: calc-app-frontend
+          - service: backend
+            dockerfile_dir: backend
+            ecr_repo: calc-app-backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Log in to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Tagged by commit SHA, not "latest" - so every image is traceable
+      # back to the exact commit that produced it, and a rollback just
+      # means deploying a known-good SHA instead of guessing.
+      - name: Build and push ${{ matrix.service }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.dockerfile_dir }}
+          push: true
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ matrix.ecr_repo }}:${{ github.sha }}
