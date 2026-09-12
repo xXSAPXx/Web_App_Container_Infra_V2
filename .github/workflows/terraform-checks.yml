@@ -1,0 +1,31 @@
+name: Terraform Checks
+
+on:
+  pull_request:
+    paths:
+      - "IaC/terraform/**"
+  push:
+    branches: [main]
+    paths:
+      - "IaC/terraform/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: IaC/terraform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: terraform fmt
+        run: terraform fmt -check -recursive
+
+      - name: terraform init
+        run: terraform init -backend=false
+
+      - name: terraform validate
+        run: terraform validate
