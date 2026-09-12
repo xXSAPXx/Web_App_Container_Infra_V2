@@ -5,3 +5,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+
+  # Real application dependencies (unlike the actions above, these are
+  # what the 18 vulnerabilities on main are almost certainly coming from -
+  # one entry per directory with its own package.json, npm treats each as
+  # an independent project).
+  - package-ecosystem: "npm"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
