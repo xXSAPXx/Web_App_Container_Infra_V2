@@ -32,12 +32,10 @@ skip-check:
                 # referenced via vpc_security_group_ids/launch templates
 
   # --- Deferred: a real design change, not a quick annotation ---
-  - CKV_AWS_38  # EKS public endpoint reachable from 0.0.0.0/0 - could restrict to one IP like SSH, not done yet
   - CKV_AWS_39  # EKS public endpoint enabled at all - same decision as above
 
   # --- Free to fix, but conflicts with how this lab is actually used ---
   - CKV_AWS_293 # RDS deletion protection - would block the destroy/recreate-from-snapshot workflow this repo relies on
   - CKV_AWS_226 # RDS auto minor version upgrade - could surprise-patch mid-session, prefer to control timing manually
-  - CKV_AWS_353 # RDS Performance Insights - free tier eligible, just not needed for this app's traffic level
   - CKV_AWS_338 # CloudWatch log retention 1 year - 30 days is plenty for a lab that gets torn down/rebuilt
   - CKV2_AWS_41 # Bastion has no IAM instance profile - not needed, access is via Tailscale/SSH, not AWS APIs
