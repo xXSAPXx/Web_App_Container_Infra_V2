@@ -61,9 +61,14 @@ resource "aws_launch_template" "eks_node" {
   }
 
   metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required" # Enforce IMDSv2
-    http_put_response_hop_limit = 2
+    http_endpoint = "enabled"
+    http_tokens   = "required" # Enforce IMDSv2
+    # 1, not the default 2 - hop limit 2 would let a pod (container -> host
+    # is already 1 hop) reach the NODE's own IMDS and its broader IAM role,
+    # not just its own scoped IRSA permissions. Every AWS-integrated add-on
+    # here (ALB controller, Prometheus, EBS CSI, ...) already uses IRSA, not
+    # node-level credentials, so nothing needs this path open.
+    http_put_response_hop_limit = 1
   }
 
   # Raises kubelet's --max-pods above what the AL2023 AMI's built-in

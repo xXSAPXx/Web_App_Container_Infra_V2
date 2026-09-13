@@ -113,7 +113,7 @@ module "security_groups" {
   rds_security_group_name = "RDS_SG_IaC"
 
   # --- Bastion Sec_Group Settings ---
-  bastion_host_cidr_block = "0.0.0.0/0"
+  bastion_host_cidr_block = var.my_ip_cidr
   sec_group_name          = "bastion_sg"
   sec_group_description   = "Allow SSH access for the bastion jump host"
   vpc_cidr_block          = module.vpc.vpc_cidr_block # Used for ICMP (Ping) from inside the VPC.
@@ -148,9 +148,8 @@ module "database" {
   #username            = "admin"               # No need since we restore from snapshot.
   #password            = "12345678"            # No need since we restore from snapshot.
 
-  rds_port                 = "3306"
-  rds_parameter_group_name = "default.mysql8.0"
-  rds_publicly_accessible  = false
+  rds_port                = "3306"
+  rds_publicly_accessible = false
 
   rds_security_group_ids = [module.security_groups.rds_security_group_id]
   rds_subnet_group_name  = module.vpc.rds_subnet_group_name
