@@ -50,12 +50,34 @@ jobs:
         id: vars
         run: echo "short_sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
+      # Built locally first (push: false, load: true) so it can be scanned
+      # before anything reaches ECR - a real gate, not just an after-the-
+      # fact report. If we pushed first and scanned after, a vulnerable
+      # image would already be sitting in the registry by the time Trivy
+      # even ran.
+      - name: Build ${{ matrix.service }} image
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.dockerfile_dir }}
+          push: false
+          load: true
+          tags: local/${{ matrix.ecr_repo }}:scan
+
+      - name: Scan ${{ matrix.service }} image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: local/${{ matrix.ecr_repo }}:scan
+          exit-code: "1"
+          severity: "CRITICAL,HIGH"
+
       # Two tags on the same image, not a choice between them: v<run
       # number> is what you'd reference in conversation/dashboards
       # (auto-incrementing, not semantic - just "the Nth build"), the
       # short SHA is what a rollback would actually key off of, since
       # it's traceable back to an exact commit and never gets reused.
-      - name: Build and push ${{ matrix.service }} image
+      # Rebuilding here is a docker layer-cache hit, not a real rebuild -
+      # nothing changed since the first build above.
+      - name: Push ${{ matrix.service }} image
         uses: docker/build-push-action@v7
         with:
           context: ${{ matrix.dockerfile_dir }}
