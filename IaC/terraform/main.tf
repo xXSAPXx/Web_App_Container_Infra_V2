@@ -244,6 +244,7 @@ module "eks" {
   private_subnet_ids = module.vpc.private_subnet_ids
 
   eks_node_security_group_id = module.security_groups.eks_node_security_group_id
+  my_ip_cidr                 = var.my_ip_cidr
 }
 
 

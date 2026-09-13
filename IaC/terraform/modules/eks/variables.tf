@@ -47,6 +47,12 @@ variable "endpoint_public_access" {
   default     = true
 }
 
+variable "my_ip_cidr" {
+  type        = string
+  sensitive   = true
+  description = "Your personal IP, as a /32 - the only address allowed to reach the public EKS API endpoint directly. endpoint_private_access already covers in-VPC/Tailscale access regardless of this."
+}
+
 
 ##############################################
 # LOGGING / ENCRYPTION:
