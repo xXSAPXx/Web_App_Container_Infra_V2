@@ -51,3 +51,31 @@ jobs:
 
       - name: terraform validate
         run: terraform validate
+
+      # Catches Terraform-specific mistakes validate doesn't: unused
+      # variables, deprecated syntax, invalid values for this provider.
+      # One shared .tflint.hcl at repo root - --config with an absolute
+      # path works regardless of which matrix leg's working-directory
+      # we're in.
+      - uses: terraform-linters/setup-tflint@v6
+        with:
+          cache: true
+
+      - name: tflint --init
+        run: tflint --init --config "${{ github.workspace }}/.tflint.hcl"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: tflint
+        run: tflint --config "${{ github.workspace }}/.tflint.hcl"
+
+      # Checks the actual resource configurations for real security
+      # misconfigurations (open security groups, missing encryption,
+      # overly-broad IAM) - the thing validate/fmt/tflint can't see,
+      # since they only judge syntax and Terraform-specific correctness.
+      - name: Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: ${{ matrix.working_directory }}
+          framework: terraform
+          quiet: true
