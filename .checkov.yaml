@@ -1,0 +1,43 @@
+# Checkov config - muted checks for this repo.
+#
+# Nothing here is "fixed" - these are either real AWS costs this lab
+# deliberately avoids, or deliberate design choices Checkov can't tell
+# apart from a mistake. Every entry has a one-line reason. Findings that
+# are still genuinely open (not yet decided, might get fixed later) are
+# NOT listed here on purpose, so they keep failing CI as a reminder:
+#   - CKV2_AWS_64  KMS key policy undefined (EKS secrets key)
+#   - CKV2_AWS_69  RDS encryption in transit (needs a paired mysql2 ssl change)
+#
+# See PR that introduced this file for the full triage.
+
+skip-check:
+  # --- Real ongoing AWS cost, not worth it for a personal lab ---
+  - CKV_AWS_126 # EC2 detailed monitoring (bastion) - ~$2.10/instance/month
+  - CKV_AWS_118 # RDS enhanced monitoring - extra monthly cost
+  - CKV_AWS_157 # RDS Multi-AZ - doubles the RDS instance cost
+  - CKV_AWS_129 # RDS log exports to CloudWatch - ongoing ingestion/storage cost
+  - CKV2_AWS_11 # VPC Flow Logs - ongoing CloudWatch ingestion cost
+
+  # --- Not achievable without breaking how this lab runs, or real cost ---
+  - CKV_AWS_135 # EC2 EBS-optimized - t2.micro (bastion) doesn't support this flag at all
+  - CKV_AWS_158 # CloudWatch log group KMS encryption - needs a KMS key policy decision,
+                # bundled with the still-open CKV2_AWS_64 above rather than solved separately
+
+  # --- Working as intended, not a misconfiguration ---
+  - CKV_AWS_260 # ALB HTTP open to 0.0.0.0/0 - it's a public-facing app, that's the point
+  - CKV_AWS_130 # Public subnets auto-assign a public IP - no NAT gateway, this is how they reach the internet
+  - CKV_AWS_382 # SG egress -1 to 0.0.0.0/0 (bastion/ALB/EKS nodes) - standard "allow all outbound" pattern
+  - CKV_AWS_277 # Bastion SG allows ICMP from 0.0.0.0/0 - deliberately left open so ping works from anywhere
+  - CKV2_AWS_5  # "SG not attached" - false positive, Checkov's static analysis doesn't see SGs
+                # referenced via vpc_security_group_ids/launch templates
+
+  # --- Deferred: a real design change, not a quick annotation ---
+  - CKV_AWS_38  # EKS public endpoint reachable from 0.0.0.0/0 - could restrict to one IP like SSH, not done yet
+  - CKV_AWS_39  # EKS public endpoint enabled at all - same decision as above
+
+  # --- Free to fix, but conflicts with how this lab is actually used ---
+  - CKV_AWS_293 # RDS deletion protection - would block the destroy/recreate-from-snapshot workflow this repo relies on
+  - CKV_AWS_226 # RDS auto minor version upgrade - could surprise-patch mid-session, prefer to control timing manually
+  - CKV_AWS_353 # RDS Performance Insights - free tier eligible, just not needed for this app's traffic level
+  - CKV_AWS_338 # CloudWatch log retention 1 year - 30 days is plenty for a lab that gets torn down/rebuilt
+  - CKV2_AWS_41 # Bastion has no IAM instance profile - not needed, access is via Tailscale/SSH, not AWS APIs
