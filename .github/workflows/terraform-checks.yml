@@ -77,9 +77,13 @@ jobs:
       # misconfigurations (open security groups, missing encryption,
       # overly-broad IAM) - the thing validate/fmt/tflint can't see,
       # since they only judge syntax and Terraform-specific correctness.
+      # config_file points at the repo-root .checkov.yaml (skip-list with
+      # reasons) regardless of which matrix leg's working-directory we're
+      # in - same pattern as tflint's --config above.
       - name: Checkov
         uses: bridgecrewio/checkov-action@v12
         with:
           directory: ${{ matrix.working_directory }}
           framework: terraform
           quiet: true
+          config_file: ${{ github.workspace }}/.checkov.yaml
