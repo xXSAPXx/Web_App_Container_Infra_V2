@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:9d2a9a6"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:0b85218"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
