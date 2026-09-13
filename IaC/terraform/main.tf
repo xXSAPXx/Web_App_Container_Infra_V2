@@ -148,9 +148,8 @@ module "database" {
   #username            = "admin"               # No need since we restore from snapshot.
   #password            = "12345678"            # No need since we restore from snapshot.
 
-  rds_port                 = "3306"
-  rds_parameter_group_name = "default.mysql8.0"
-  rds_publicly_accessible  = false
+  rds_port                = "3306"
+  rds_publicly_accessible = false
 
   rds_security_group_ids = [module.security_groups.rds_security_group_id]
   rds_subnet_group_name  = module.vpc.rds_subnet_group_name

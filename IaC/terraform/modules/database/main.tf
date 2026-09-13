@@ -1,5 +1,43 @@
 
 ################################################################################
+# Custom parameter group - AWS's built-in default.mysql8.0 (used here
+# previously) can't be edited at all, which is exactly why it's flagged by
+# tflint's aws_db_instance_default_parameter_group rule. Empty for now (no
+# non-default settings needed yet), but this is a real, ownable resource
+# to actually tune later instead of a dead end.
+################################################################################
+resource "aws_db_parameter_group" "mydb" {
+  name        = "calc-app-mysql8"
+  family      = "mysql8.0" # matches rds_engine_version's major.minor - all 8.0.x versions share this family
+  description = "Custom parameter group for calc-app's RDS instance"
+
+  # A small, real app on db.t3.micro doesn't need RDS's default
+  # memory-formula-derived max_connections (often much higher than this
+  # instance could actually handle well) - pinned to a known, controlled
+  # value instead of an implicit one.
+  parameter {
+    name  = "max_connections"
+    value = "100"
+  }
+
+  # Slow query log - genuinely useful for observability given the
+  # Prometheus/Grafana stack already built this session, not just a
+  # default-for-defaults-sake setting.
+  parameter {
+    name  = "slow_query_log"
+    value = "1"
+  }
+
+  # Threshold (seconds) above which a query is logged as slow - both are
+  # dynamic parameters in MySQL 8.0, applied immediately, no reboot.
+  parameter {
+    name  = "long_query_time"
+    value = "2"
+  }
+}
+
+
+################################################################################
 # Create an RDS Instance in the Private Subnet Group (2 private_subnets)
 ################################################################################
 resource "aws_db_instance" "mydb" {
@@ -14,7 +52,7 @@ resource "aws_db_instance" "mydb" {
   #password            = "12345678"            # No need since we restore from snapshot.
 
   port                 = var.rds_port
-  parameter_group_name = var.rds_parameter_group_name
+  parameter_group_name = aws_db_parameter_group.mydb.name
   publicly_accessible  = var.rds_publicly_accessible
 
   vpc_security_group_ids = var.rds_security_group_ids

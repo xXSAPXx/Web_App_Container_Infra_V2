@@ -48,12 +48,6 @@ variable "rds_final_snapshot_identifier" {
   description = "Identifier for the final snapshot to create before deletion."
 }
 
-variable "rds_parameter_group_name" {
-  type        = string
-  description = "Name of the DB parameter group."
-  default     = "default.mysql8.0"
-}
-
 variable "rds_storage_encrypted" {
   type        = bool
   description = "Is the RDS storage encrypted?"
