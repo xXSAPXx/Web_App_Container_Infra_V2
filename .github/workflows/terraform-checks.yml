@@ -7,6 +7,10 @@ permissions:
   contents: read
 
 on:
+  # Manual "Build Now" button - Actions tab -> this workflow -> Run
+  # workflow. Same reasoning as build-push-images.yml: re-trigger on
+  # demand without a throwaway commit to satisfy a path filter.
+  workflow_dispatch:
   pull_request:
     paths:
       - "IaC/terraform/**"
