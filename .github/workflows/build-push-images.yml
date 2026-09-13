@@ -1,6 +1,11 @@
 name: Build and Push Images to AWS ECR
 
 on:
+  # Manual "Build Now" button - Actions tab -> this workflow -> Run
+  # workflow. Lets you re-trigger a real run (e.g. to pick up a CI-only
+  # fix) without needing a throwaway commit to backend/**/frontend/** just
+  # to satisfy the push trigger's path filter.
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
