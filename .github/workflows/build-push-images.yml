@@ -26,12 +26,30 @@ jobs:
           - service: frontend
             dockerfile_dir: frontend
             ecr_repo: calc-app-frontend
+            run_tests: false
           - service: backend
             dockerfile_dir: backend
             ecr_repo: calc-app-backend
+            run_tests: true
 
     steps:
       - uses: actions/checkout@v4
+
+      # backend/Dockerfile has a "test" stage (RUN npm run test) that
+      # nothing was ever targeting - the regular build below only builds
+      # the last stage (production) by default, so tests never actually
+      # ran in CI. This targets that stage directly: no push, no load,
+      # the point is just that RUN npm run test either exits 0 or fails
+      # the build. Runs first - fail fast before wasting time on a build/
+      # scan of code whose tests don't even pass. frontend has no test
+      # framework (static Apache site), hence run_tests being per-service.
+      - name: Run tests
+        if: matrix.run_tests
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.dockerfile_dir }}
+          target: test
+          push: false
 
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
