@@ -28,6 +28,16 @@ resource "aws_instance" "bastion_prometheus" {
     volume_type = var.volume_type
   }
 
+  # IMDSv2 only - IMDSv1's plain HTTP GET (no token) is the classic
+  # SSRF-to-credential-theft vector (a vulnerable app on this box could
+  # be tricked into fetching http://169.254.169.254/... and handing an
+  # attacker the instance's IAM credentials). The bastion's own userdata
+  # already uses the token-based flow for its own IMDS calls, so this
+  # doesn't change anything it actually does.
+  metadata_options {
+    http_tokens = "required"
+  }
+
   tags = {
     Name       = var.bastion_host_tag_name
     Prometheus = "true" # matches the ec2_sd_configs relabel filter in

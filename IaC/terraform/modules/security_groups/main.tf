@@ -4,9 +4,11 @@
 ##################################################################
 
 resource "aws_security_group" "rds_sg" {
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
+  description = "RDS - MySQL access from inside the VPC only"
 
   ingress {
+    description = "MySQL from inside the VPC"
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
@@ -14,6 +16,7 @@ resource "aws_security_group" "rds_sg" {
   }
 
   egress {
+    description = "All outbound, scoped to inside the VPC"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -40,6 +43,7 @@ resource "aws_security_group" "bastion_prometheus_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
+    description = "SSH"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
@@ -47,10 +51,11 @@ resource "aws_security_group" "bastion_prometheus_sg" {
   }
 
   ingress {
+    description = "Ping from outside and inside the VPC"
     from_port   = -1
     to_port     = -1
     protocol    = "icmp"
-    cidr_blocks = [var.bastion_host_cidr_block, var.vpc_cidr_block] # Ping from outside and inside the VPC.
+    cidr_blocks = [var.bastion_host_cidr_block, var.vpc_cidr_block]
   }
 
   ingress {
@@ -67,6 +72,7 @@ resource "aws_security_group" "bastion_prometheus_sg" {
   # reach it directly.
 
   egress {
+    description = "All outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -80,7 +86,8 @@ resource "aws_security_group" "bastion_prometheus_sg" {
 ##################################################################
 
 resource "aws_security_group" "alb_security_group" {
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
+  description = "Public ALB - HTTP/HTTPS from the internet"
 
   # Allow incoming HTTP traffic
   ingress {
@@ -124,7 +131,8 @@ resource "aws_security_group" "alb_security_group" {
 ##################################################################
 
 resource "aws_security_group" "eks_node_sg" {
-  vpc_id = var.vpc_id
+  vpc_id      = var.vpc_id
+  description = "EKS worker nodes - pod-to-pod, ALB-to-pod, and bastion connectivity checks"
 
   ingress {
     description = "Node-to-node / pod-to-pod traffic within the cluster"
@@ -151,6 +159,7 @@ resource "aws_security_group" "eks_node_sg" {
   }
 
   egress {
+    description = "All outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

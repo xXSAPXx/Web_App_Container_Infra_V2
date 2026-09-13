@@ -4,13 +4,30 @@
 # Create a VPC / 2_Public_Subnets for teh NAT and ALB / Internet_Gateway
 ###################################################################################
 
-# Create the VPC: 
+# Create the VPC:
 resource "aws_vpc" "my_vpc" {
   cidr_block           = var.vpc_cidr_block
   enable_dns_support   = true
   enable_dns_hostnames = true
   tags = {
     Name = var.vpc_name
+  }
+}
+
+
+# Every VPC auto-creates a default security group that allows all traffic
+# within itself plus all outbound, whether anything uses it or not.
+# Nothing in this repo attaches to it deliberately - everything gets an
+# explicit SG - but locking it down to zero rules is the defense-in-depth
+# move against something someday landing here by accident (a resource
+# added without vpc_security_group_ids falls back to this one silently).
+# This doesn't create a new SG - aws_default_security_group manages the
+# one AWS already made.
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.my_vpc.id
+
+  tags = {
+    Name = "${var.vpc_name}-default-locked-down"
   }
 }
 
