@@ -23,18 +23,23 @@ const pool = mysql.createPool({
   connectionLimit: process.env.DB_CONNECTION_LIMIT || 10,
 });
 
-// Test the MySQL connection
-pool.getConnection((err, connection) => {
-  if (err) {
-    // Log the error to server.log
-    console.error(`[${new Date().toISOString()}] Error connecting to MySQL: ${err.message}`);
-    console.error('Error connecting to MySQL:', err);
-    process.exit(1); // Exit the process with an error code
-  } else {
-    console.log('Connected to MySQL database');
-    connection.release(); // Release the connection back to the pool
-  }
-});
+// Test the MySQL connection - skipped when this file is require()'d
+// (e.g. by tests) rather than run directly, so importing server.js for
+// testing doesn't need a real database or crash the process on connect
+// failure via process.exit(1).
+if (require.main === module) {
+  pool.getConnection((err, connection) => {
+    if (err) {
+      // Log the error to server.log
+      console.error(`[${new Date().toISOString()}] Error connecting to MySQL: ${err.message}`);
+      console.error('Error connecting to MySQL:', err);
+      process.exit(1); // Exit the process with an error code
+    } else {
+      console.log('Connected to MySQL database');
+      connection.release(); // Release the connection back to the pool
+    }
+  });
+}
 
 // Registration endpoint
 app.post('/calculator/api/register', async (req, res) => {
@@ -92,7 +97,13 @@ app.get('/backend', (req, res) => {
     res.status(200).send('OK');
   });
 
-// Server Listens for response on port 3000: 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+// Server Listens for response on port 3000 - same require.main guard as
+// the MySQL check above: a test importing `app` shouldn't also bind a
+// real port.
+if (require.main === module) {
+  app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+  });
+}
+
+module.exports = app;
