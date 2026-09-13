@@ -84,3 +84,17 @@ variable "tailscale_oauth_client_secret" {
   sensitive   = true
   description = "Tailscale OAuth client secret paired with tailscale_oauth_client_id"
 }
+
+
+# Bastion SSH - was 0.0.0.0/0 (Checkov CKV_AWS_24 flagged it, correctly).
+# Tailscale is the real access path now and was never gated by this rule
+# in the first place (the decrypted inner packet never crosses the ENI as
+# a separate event), so this is purely a break-glass fallback, scoped to
+# one IP rather than the whole internet. Required via terraform.tfvars,
+# not a tracked default - this repo is public, a home IP doesn't belong
+# in git history. Find yours with: curl.exe -s https://api.ipify.org
+variable "my_ip_cidr" {
+  type        = string
+  sensitive   = true
+  description = "Your personal IP, as a /32 - the only address allowed to SSH into the bastion directly. Never 0.0.0.0/0"
+}

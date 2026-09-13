@@ -47,3 +47,8 @@ tailscale_authkey          = <EXAMPLE>
 #    operator itself).
 tailscale_oauth_client_id     = <EXAMPLE>
 tailscale_oauth_client_secret = <EXAMPLE>
+
+# Your personal IP as a /32 - the only address allowed to SSH into the
+# bastion directly (Tailscale is the real access path; this is a
+# break-glass fallback). Find it with: curl.exe -s https://api.ipify.org
+my_ip_cidr                    = <EXAMPLE>

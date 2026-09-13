@@ -43,19 +43,22 @@ resource "aws_security_group" "bastion_prometheus_sg" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "SSH"
+    description = "SSH - restricted to a single known IP, not the whole internet"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = [var.bastion_host_cidr_block]
   }
 
+  # Deliberately left open (0.0.0.0/0), unlike SSH above - ping is
+  # low-risk (no shell/data access) and genuinely useful for anyone to
+  # check the bastion's reachable, not just from one known IP.
   ingress {
-    description = "Ping from outside and inside the VPC"
+    description = "Ping from anywhere, and from inside the VPC"
     from_port   = -1
     to_port     = -1
     protocol    = "icmp"
-    cidr_blocks = [var.bastion_host_cidr_block, var.vpc_cidr_block]
+    cidr_blocks = ["0.0.0.0/0", var.vpc_cidr_block]
   }
 
   ingress {

@@ -43,8 +43,7 @@ variable "sec_group_description" {
 
 variable "bastion_host_cidr_block" {
   type        = string
-  description = "CIDR block used for ingress and egress inside the VPC."
-  default     = "0.0.0.0/0"
+  description = "CIDR allowed to SSH into the bastion - a /32, never 0.0.0.0/0. ICMP is handled separately and stays open."
 }
 
 variable "vpc_cidr_block" {

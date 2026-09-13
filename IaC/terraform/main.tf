@@ -113,7 +113,7 @@ module "security_groups" {
   rds_security_group_name = "RDS_SG_IaC"
 
   # --- Bastion Sec_Group Settings ---
-  bastion_host_cidr_block = "0.0.0.0/0"
+  bastion_host_cidr_block = var.my_ip_cidr
   sec_group_name          = "bastion_sg"
   sec_group_description   = "Allow SSH access for the bastion jump host"
   vpc_cidr_block          = module.vpc.vpc_cidr_block # Used for ICMP (Ping) from inside the VPC.
