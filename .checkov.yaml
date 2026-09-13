@@ -17,6 +17,8 @@ skip-check:
   - CKV_AWS_157 # RDS Multi-AZ - doubles the RDS instance cost
   - CKV_AWS_129 # RDS log exports to CloudWatch - ongoing ingestion/storage cost
   - CKV2_AWS_11 # VPC Flow Logs - ongoing CloudWatch ingestion cost
+  - CKV_AWS_354 # RDS Performance Insights encrypted with a customer-managed KMS key - already
+                # encrypted via the AWS-managed default key; a CMK is a real ~$1/month, not free
 
   # --- Not achievable without breaking how this lab runs, or real cost ---
   - CKV_AWS_135 # EC2 EBS-optimized - t2.micro (bastion) doesn't support this flag at all
