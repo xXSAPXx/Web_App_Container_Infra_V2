@@ -17,11 +17,12 @@ skip-check:
   - CKV_AWS_157 # RDS Multi-AZ - doubles the RDS instance cost
   - CKV_AWS_129 # RDS log exports to CloudWatch - ongoing ingestion/storage cost
   - CKV2_AWS_11 # VPC Flow Logs - ongoing CloudWatch ingestion cost
-  - CKV_AWS_354 # RDS Performance Insights encrypted with a customer-managed KMS key - already
-                # encrypted via the AWS-managed default key; a CMK is a real ~$1/month, not free
 
   # --- Not achievable without breaking how this lab runs, or real cost ---
   - CKV_AWS_135 # EC2 EBS-optimized - t2.micro (bastion) doesn't support this flag at all
+  - CKV_AWS_353 # RDS Performance Insights - db.t3.micro flatly doesn't support it (confirmed live:
+                # "InvalidParameterCombination: Performance Insights not supported for this configuration").
+                # Would need a bigger, non-free instance class. Also EOL July 2026, not worth chasing.
   - CKV_AWS_158 # CloudWatch log group KMS encryption - needs a KMS key policy decision,
                 # bundled with the still-open CKV2_AWS_64 above rather than solved separately
 
