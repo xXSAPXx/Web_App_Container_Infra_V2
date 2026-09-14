@@ -69,10 +69,6 @@ resource "aws_db_instance" "mydb" {
   # coming out untagged - otherwise they're anonymous blobs in the console
   # with no way to tell which app they belong to.
   copy_tags_to_snapshot = true
-
-  # Free on db.t3.micro at the default 7-day retention - query-level
-  # performance metrics without the ongoing cost of enhanced monitoring.
-  performance_insights_enabled = true
 }
 
 
