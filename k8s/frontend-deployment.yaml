@@ -7,6 +7,11 @@ metadata:
     app: frontend
 spec:
   replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: frontend
@@ -17,7 +22,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:0b85218"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:4a46782"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
