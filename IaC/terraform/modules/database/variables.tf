@@ -8,6 +8,12 @@ variable "rds_instance_class" {
   default     = "db.t3.micro"
 }
 
+variable "rds_identifier" {
+  type        = string
+  description = "The RDS instance identifier."
+  default     = "calc-app-db"
+}
+
 variable "rds_allocated_storage" {
   type        = number
   description = "The allocated storage in GBs for the RDS instance."

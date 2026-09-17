@@ -4,6 +4,8 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const bodyParser = require('body-parser');
 const cors = require('cors'); // Add this line
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const port = 3000;
@@ -21,6 +23,11 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'calc_app_db',
   port: process.env.DB_PORT || 3306,
   connectionLimit: process.env.DB_CONNECTION_LIMIT || 10,
+  // mysql2 has no "Amazon RDS" shorthand like the old mysql package - the
+  // actual CA bundle has to be supplied for the handshake to validate.
+  ssl: {
+    ca: fs.readFileSync(path.join(__dirname, 'certs', 'rds-ca-bundle.pem')),
+  },
 });
 
 // Test the MySQL connection - skipped when this file is require()'d
@@ -36,7 +43,12 @@ if (require.main === module) {
       process.exit(1); // Exit the process with an error code
     } else {
       console.log('Connected to MySQL database');
-      connection.release(); // Release the connection back to the pool
+      connection.query("SHOW STATUS LIKE 'Ssl_cipher'", (sslErr, rows) => {
+        if (!sslErr && rows[0]) {
+          console.log(`MySQL connection SSL cipher: ${rows[0].Value || '(none - not using TLS)'}`);
+        }
+        connection.release(); // Release the connection back to the pool
+      });
     }
   });
 }
