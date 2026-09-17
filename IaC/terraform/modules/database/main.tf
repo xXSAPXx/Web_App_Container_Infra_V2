@@ -40,6 +40,13 @@ resource "aws_db_parameter_group" "mydb" {
     value        = "1"
     apply_method = "pending-reboot"
   }
+
+  # Dynamic - applies immediately, no reboot. Verified every connection
+  # (backend pods + admin sessions) is already on TLS before enabling this.
+  parameter {
+    name  = "require_secure_transport"
+    value = "1"
+  }
 }
 
 
