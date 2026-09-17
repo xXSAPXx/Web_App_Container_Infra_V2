@@ -13,6 +13,14 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
   thumbprint_list = []
+
+  # AWS validates the JWKS endpoint's own root CA since July 2023 -
+  # thumbprint_list is vestigial and AWS silently re-populates a value
+  # server-side regardless of what's sent here, so plan never converges
+  # to 0 without this. Confirmed live on AWS provider v6.65.
+  lifecycle {
+    ignore_changes = [thumbprint_list]
+  }
 }
 
 # WHO can assume the role - scoped to pushes to this repo's main branch
