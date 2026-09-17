@@ -34,6 +34,12 @@ resource "aws_db_parameter_group" "mydb" {
     name  = "long_query_time"
     value = "2"
   }
+
+  parameter {
+    name         = "performance_schema"
+    value        = "1"
+    apply_method = "pending-reboot"
+  }
 }
 
 
@@ -41,6 +47,9 @@ resource "aws_db_parameter_group" "mydb" {
 # Create an RDS Instance in the Private Subnet Group (2 private_subnets)
 ################################################################################
 resource "aws_db_instance" "mydb" {
+  # Custom RDS Name:
+  identifier = var.rds_identifier
+
   engine            = var.rds_engine
   engine_version    = var.rds_engine_version
   instance_class    = var.rds_instance_class
@@ -58,8 +67,14 @@ resource "aws_db_instance" "mydb" {
   vpc_security_group_ids = var.rds_security_group_ids
   db_subnet_group_name   = var.rds_subnet_group_name
 
-  snapshot_identifier = var.rds_snapshot_identifier # Replace with your snapshot ID from which you want the DB to be created 
+  snapshot_identifier = var.rds_snapshot_identifier # Replace with your snapshot ID from which you want the DB to be created
   maintenance_window  = var.maintenance_window
+
+  # Without this, modifications (renames, parameter group changes, etc.)
+  # queue for the next maintenance_window instead of applying now - fine
+  # for a real prod DB, but this lab gets built/destroyed same-session,
+  # so a change deferred to "mon:19:00-mon:19:30" would just never happen.
+  apply_immediately = true
 
   # Prevent deletion of the database
   skip_final_snapshot       = var.skip_final_snapshot
