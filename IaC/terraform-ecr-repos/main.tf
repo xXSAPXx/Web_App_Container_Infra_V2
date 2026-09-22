@@ -3,7 +3,7 @@
 # IaC/terraform/ stack. See IaC/README.md for the full apply order.
 
 module "ecr" {
-  source = "../terraform/modules/ecr"
+  source = "./modules/ecr"
 
   repository_prefix = "calc-app"
   max_image_count   = 5
