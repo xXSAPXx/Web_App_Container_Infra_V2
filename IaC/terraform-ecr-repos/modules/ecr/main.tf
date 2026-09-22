@@ -45,6 +45,31 @@ resource "aws_ecr_repository" "backend" {
   }
 }
 
+# Trusted base image repo - curated, scanned base images (node:26-alpine,
+# httpd:2.4-alpine) that backend/frontend Dockerfiles pull FROM instead of
+# Docker Hub directly. Populated by a dedicated curation workflow (pull
+# upstream -> Trivy scan -> only if clean, push here) - not by
+# build-push-images.yml.
+#
+# MUTABLE, unlike the app repos above: each base image lives under one
+# stable tag (node-26-alpine, httpd-2.4-alpine) that gets overwritten
+# whenever a re-scanned refresh is pushed - there's no per-commit
+# versioning scheme here to make immutability meaningful. No lifecycle
+# policy either - only ever 2 tags total, nothing to expire.
+resource "aws_ecr_repository" "trusted_base_images" {
+  name                 = "trusted_base_images"
+  image_tag_mutability = "MUTABLE"
+  force_delete         = var.force_delete
+
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+
+  encryption_configuration {
+    encryption_type = "KMS"
+  }
+}
+
 # Keep only the most recent N images per repo so this doesn't grow unbounded
 # across repeated manual pushes during testing.
 resource "aws_ecr_lifecycle_policy" "frontend" {
