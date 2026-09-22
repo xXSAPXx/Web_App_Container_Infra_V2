@@ -51,14 +51,14 @@ resource "aws_ecr_repository" "backend" {
 # upstream -> Trivy scan -> only if clean, push here) - not by
 # build-push-images.yml.
 #
-# MUTABLE, unlike the app repos above: each base image lives under one
-# stable tag (node-26-alpine, httpd-2.4-alpine) that gets overwritten
-# whenever a re-scanned refresh is pushed - there's no per-commit
-# versioning scheme here to make immutability meaningful. No lifecycle
-# policy either - only ever 2 tags total, nothing to expire.
+# IMMUTABLE, same as the app repos above: each vetted refresh gets its own
+# version tag (node-26-alpine-<n>, httpd-2.4-alpine-<n>) instead of
+# overwriting a fixed name - a "trusted" repo whose tags could silently
+# change later would defeat the point. No lifecycle policy - the handful
+# of versions this ever accumulates isn't worth expiring.
 resource "aws_ecr_repository" "trusted_base_images" {
   name                 = "trusted_base_images"
-  image_tag_mutability = "MUTABLE"
+  image_tag_mutability = "IMMUTABLE"
   force_delete         = var.force_delete
 
   image_scanning_configuration {
