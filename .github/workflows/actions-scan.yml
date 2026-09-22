@@ -32,13 +32,13 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       # Correctness/syntax linter (like tflint for Terraform) - catches
       # malformed expressions, invalid contexts, and shellcheck issues in
       # run: blocks. No security analysis here; that's zizmor's job below.
       - name: actionlint
-        uses: raven-actions/actionlint@v2
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
 
   zizmor:
     runs-on: ubuntu-latest
@@ -56,7 +56,7 @@ jobs:
       # persist-credentials: false, per zizmor's own recommended setup -
       # this job only reads workflow files, so there's no reason for the
       # checkout token to stick around in the git config afterwards.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
 
@@ -73,4 +73,4 @@ jobs:
       # commit SHA - that's a known, intentional gap to close
       # incrementally in follow-up PRs, not a bug in this workflow.
       - name: zizmor
-        uses: zizmorcore/zizmor-action@v0.6.4
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4

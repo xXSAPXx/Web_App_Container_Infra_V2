@@ -46,18 +46,18 @@ jobs:
       # Skipped on the "closed" event - there's no new diff to compute
       # when a PR merges/closes, this run just needs to reach the diff
       # action below so it can mark the PR closed on Infracost's side.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: github.event.action != 'closed'
         with:
           path: head
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: github.event.action != 'closed'
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           path: base
 
-      - uses: infracost/actions/diff@v4
+      - uses: infracost/actions/diff@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           base-path: base
@@ -69,9 +69,9 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: infracost/actions/scan@v4
+      - uses: infracost/actions/scan@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
         with:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           path: .
