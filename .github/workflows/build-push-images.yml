@@ -19,6 +19,15 @@ permissions:
   id-token: write
   contents: read
 
+# Keyed on branch/PR so two runs on the same ref never push to ECR at the
+# same time - but cancel-in-progress stays false, unlike the read-only
+# workflows: this one actually pushes image layers, so cancelling a run
+# mid-push could leave a half-uploaded/corrupt tag. A second run just
+# queues behind the first instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
@@ -59,7 +68,7 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ECR_PUSH_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Log in to ECR

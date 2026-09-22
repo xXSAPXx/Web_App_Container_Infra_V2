@@ -6,6 +6,14 @@ name: Terraform Checks
 permissions:
   contents: read
 
+# Keyed on branch/PR so a new push cancels whatever's still running for
+# that same ref - safe here since every step is read-only (fmt/validate/
+# tflint/checkov), so there's nothing a cancelled run could leave
+# half-done.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   # Manual "Build Now" button - Actions tab -> this workflow -> Run
   # workflow. Same reasoning as build-push-images.yml: re-trigger on
