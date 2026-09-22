@@ -3,10 +3,34 @@
 # KMS key for envelope-encrypting Kubernetes Secrets at rest.
 ##################################################################
 
+data "aws_caller_identity" "current" {}
+
+# Explicit policy mirroring AWS's own implicit default exactly (root gets
+# full kms:*, nothing else) - CKV2_AWS_64 wants a policy defined at all,
+# not necessarily a different one. Deliberately NOT a tighter/custom
+# policy: KMS key policies are the one place a mistake can be genuinely
+# unrecoverable (this statement is what keeps root able to fix the policy
+# later if anything about this key's access ever needs to change).
+data "aws_iam_policy_document" "eks_kms_default" {
+  statement {
+    sid    = "Enable IAM User Permissions"
+    effect = "Allow"
+
+    principals {
+      type        = "AWS"
+      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+    }
+
+    actions   = ["kms:*"]
+    resources = ["*"]
+  }
+}
+
 resource "aws_kms_key" "eks" {
   description             = "Envelope encryption key for ${var.cluster_name} Kubernetes Secrets"
   deletion_window_in_days = 7
   enable_key_rotation     = true
+  policy                  = data.aws_iam_policy_document.eks_kms_default.json
 
   tags = {
     Name = "${var.cluster_name}-secrets-key"
