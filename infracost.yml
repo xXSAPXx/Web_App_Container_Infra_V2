@@ -1,0 +1,10 @@
+# Tells infracost/actions (diff and scan) about both independent
+# Terraform roots in this repo - same two projects terraform-checks.yml
+# treats as separate matrix legs. Auto-discovered from the repo root, no
+# reference to this file needed in the workflow itself.
+version: 0.1
+projects:
+  - path: IaC/terraform
+    name: cluster
+  - path: IaC/terraform-ecr-repos
+    name: ecr-repos

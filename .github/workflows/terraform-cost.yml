@@ -1,0 +1,77 @@
+name: Terraform Cost Estimate
+
+# pull-requests: write is what lets the diff job post/update the cost
+# comment on the PR; contents: read is just for checkout. No AWS
+# credentials needed anywhere here - Infracost prices resources by
+# statically parsing the HCL against its own pricing catalog (same as
+# Checkov statically parsing it for security issues), it never touches
+# real state or needs cloud auth, even for the S3-backed root.
+permissions:
+  contents: read
+  pull-requests: write
+
+# Keyed on branch/PR so a new push cancels whatever's still running for
+# that same ref - safe since this workflow only estimates cost, it never
+# changes anything.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# No workflow_dispatch here, unlike the other two workflows - both jobs
+# below are meaningless outside the event they key off (diff needs a real
+# PR to comment on, scan needs a real push to main to baseline), so
+# there's no useful "run this manually" case.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    paths:
+      - "IaC/terraform/**"
+      - "IaC/terraform-ecr-repos/**"
+      - "infracost.yml"
+  push:
+    branches: [main]
+    paths:
+      - "IaC/terraform/**"
+      - "IaC/terraform-ecr-repos/**"
+      - "infracost.yml"
+
+jobs:
+  # Posts/updates the PR comment with the cost diff between base and head.
+  # infracost.yml at the repo root tells this which two directories are
+  # separate projects, so one comment covers both - no matrix needed.
+  diff:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      # Skipped on the "closed" event - there's no new diff to compute
+      # when a PR merges/closes, this run just needs to reach the diff
+      # action below so it can mark the PR closed on Infracost's side.
+      - uses: actions/checkout@v7
+        if: github.event.action != 'closed'
+        with:
+          path: head
+
+      - uses: actions/checkout@v7
+        if: github.event.action != 'closed'
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: base
+
+      - uses: infracost/actions/diff@v4
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          base-path: base
+          head-path: head
+
+  # Uploads baseline cost data for main so the diff job above has
+  # something current to compare each new PR against.
+  scan:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: infracost/actions/scan@v4
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          path: .
