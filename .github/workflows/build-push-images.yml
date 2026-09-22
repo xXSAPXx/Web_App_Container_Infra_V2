@@ -19,6 +19,15 @@ permissions:
   id-token: write
   contents: read
 
+# Keyed on branch/PR so two runs on the same ref never push to ECR at the
+# same time - but cancel-in-progress stays false, unlike the read-only
+# workflows: this one actually pushes image layers, so cancelling a run
+# mid-push could leave a half-uploaded/corrupt tag. A second run just
+# queues behind the first instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build-push:
     runs-on: ubuntu-latest
@@ -38,7 +47,7 @@ jobs:
             run_tests: true
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       # backend/Dockerfile has a "test" stage (RUN npm run test) that
       # nothing was ever targeting - the regular build below only builds
@@ -50,21 +59,21 @@ jobs:
       # framework (static Apache site), hence run_tests being per-service.
       - name: Run tests
         if: matrix.run_tests
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: ${{ matrix.dockerfile_dir }}
           target: test
           push: false
 
       - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
         with:
-          role-to-assume: ${{ vars.AWS_ECR_PUSH_ROLE_ARN }}
+          role-to-assume: ${{ secrets.AWS_ECR_PUSH_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Log in to ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
 
       # GITHUB_SHA is the full 40-char commit SHA - not something anyone
       # wants to type/read, so this trims it the same way GitHub's own UI
@@ -79,7 +88,7 @@ jobs:
       # image would already be sitting in the registry by the time Trivy
       # even ran.
       - name: Build ${{ matrix.service }} image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: ${{ matrix.dockerfile_dir }}
           push: false
@@ -87,7 +96,7 @@ jobs:
           tags: local/${{ matrix.ecr_repo }}:scan
 
       - name: Scan ${{ matrix.service }} image
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@a9c7b0f06e461e9d4b4d1711f154ee024b8d7ab8 # v0.36.0
         with:
           image-ref: local/${{ matrix.ecr_repo }}:scan
           exit-code: "1"
@@ -107,7 +116,7 @@ jobs:
       # Rebuilding here is a docker layer-cache hit, not a real rebuild -
       # nothing changed since the first build above.
       - name: Push ${{ matrix.service }} image
-        uses: docker/build-push-action@v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: ${{ matrix.dockerfile_dir }}
           push: true

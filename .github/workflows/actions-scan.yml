@@ -1,0 +1,76 @@
+name: Scan GitHub Actions Workflows
+
+# actionlint's job needs no elevated permissions; zizmor's job overrides
+# this to add security-events: write for its SARIF upload. Scope down by
+# default and only grant what a specific job actually needs - same
+# reasoning as terraform-checks.yml.
+permissions:
+  contents: read
+
+# Keyed on branch/PR so a new push cancels whatever's still running for
+# that same ref - otherwise two quick pushes to a PR both run to
+# completion and the first one's results are already stale by the time it
+# finishes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  # Manual "Build Now" button - same reasoning as the other two workflows:
+  # re-trigger on demand without a throwaway commit to satisfy the path
+  # filter below.
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/**"
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Correctness/syntax linter (like tflint for Terraform) - catches
+      # malformed expressions, invalid contexts, and shellcheck issues in
+      # run: blocks. No security analysis here; that's zizmor's job below.
+      - name: actionlint
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
+
+  zizmor:
+    runs-on: ubuntu-latest
+
+    # security-events: write is what lets zizmor upload SARIF findings to
+    # the repo's Security tab; actions: read lets it inspect referenced
+    # reusable workflows/actions. Neither is needed by actionlint above,
+    # so both are scoped to this job only.
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+
+    steps:
+      # persist-credentials: false, per zizmor's own recommended setup -
+      # this job only reads workflow files, so there's no reason for the
+      # checkout token to stick around in the git config afterwards.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Security auditor for Actions workflows (like Checkov for
+      # Terraform) - catches script injection via untrusted input (e.g. a
+      # PR title interpolated straight into a run: block), overly broad
+      # permissions, and unpinned third-party actions.
+      #
+      # Findings upload to the Security tab but do NOT fail this job
+      # (zizmor-action's own design: Advanced Security findings are meant
+      # to be triaged there, not block merges by default). Expect a batch
+      # of "unpinned-uses" findings on first run, since every action
+      # reference in this repo is currently pinned to a tag rather than a
+      # commit SHA - that's a known, intentional gap to close
+      # incrementally in follow-up PRs, not a bug in this workflow.
+      - name: zizmor
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4

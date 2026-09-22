@@ -6,6 +6,14 @@ name: Terraform Checks
 permissions:
   contents: read
 
+# Keyed on branch/PR so a new push cancels whatever's still running for
+# that same ref - safe here since every step is read-only (fmt/validate/
+# tflint/checkov), so there's nothing a cancelled run could leave
+# half-done.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   # Manual "Build Now" button - Actions tab -> this workflow -> Run
   # workflow. Same reasoning as build-push-images.yml: re-trigger on
@@ -40,9 +48,9 @@ jobs:
         working-directory: ${{ matrix.working_directory }}
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
 
       - name: terraform fmt
         run: terraform fmt -check -recursive
@@ -61,7 +69,7 @@ jobs:
       # One shared .tflint.hcl at repo root - --config with an absolute
       # path works regardless of which matrix leg's working-directory
       # we're in.
-      - uses: terraform-linters/setup-tflint@v6
+      - uses: terraform-linters/setup-tflint@1cf010d3c7aef302051ccdb68c14c5dc2efa34ef # v6
         with:
           cache: true
 
@@ -81,7 +89,7 @@ jobs:
       # reasons) regardless of which matrix leg's working-directory we're
       # in - same pattern as tflint's --config above.
       - name: Checkov
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@444c9db6fa75e2d9c19ebf1fde7322089be9009e # v12
         with:
           directory: ${{ matrix.working_directory }}
           framework: terraform
