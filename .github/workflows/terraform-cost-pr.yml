@@ -1,4 +1,4 @@
-name: "[Repo] Terraform Cost - PR Diff"
+name: "[Repo] Terraform Cost - PR Difference"
 
 # PR half of the Infracost setup - main's baseline upload lives in
 # terraform-cost-main.yml. Split per event so neither job shows up as
@@ -35,7 +35,7 @@ jobs:
   # infracost.yml at the repo root tells this which two directories are
   # separate projects, so one comment covers both - no matrix needed.
   diff:
-    name: Infracost cost diff vs base
+    name: Infracost cost difference vs baseline
     runs-on: ubuntu-latest
 
     permissions:
