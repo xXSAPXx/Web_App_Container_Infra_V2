@@ -182,7 +182,7 @@ module "bastion_prometheus" {
 
   # --- Bastion Host Settings ---
   ami_id                = "ami-0583d8c7a9c35822c"
-  instance_type         = "t3.medium" # Infracost test - do not merge
+  instance_type         = "t3.large" # Infracost test - do not merge
   subnet_id             = module.vpc.public_subnet_2_id
   bastion_sec_group_ids = [module.security_groups.bastion_host_security_group_id]
   key_name              = var.aws_key_pair
