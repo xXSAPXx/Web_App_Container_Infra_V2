@@ -1,5 +1,4 @@
 name: "[Repo] Actions Scan"
-# Pipeline smoke test - do not merge.
 
 # actionlint's job needs no elevated permissions; zizmor's job overrides
 # this to add security-events: write for its SARIF upload. Scope down by
