@@ -13,9 +13,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# No workflow_dispatch - a baseline only means something for a real push
-# to main. Paths must stay in sync with terraform-cost-pr.yml.
+# Paths must stay in sync with terraform-cost-pr.yml.
 on:
+  # Manual "Build Now" button - refresh the baseline on demand (e.g. after
+  # changing Infracost Cloud policies) without a throwaway Terraform
+  # commit. The job below only runs when dispatched against main.
+  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -26,6 +29,10 @@ on:
 jobs:
   scan:
     name: Infracost baseline scan
+    # workflow_dispatch lets you pick any branch - don't risk a feature
+    # branch's costs being recorded as the baseline PRs diff against.
+    # push is already limited to main by the trigger above.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
