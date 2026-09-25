@@ -1,0 +1,40 @@
+name: "[Repo] Terraform Cost - Main Baseline"
+
+# main half of the Infracost setup - the PR diff lives in
+# terraform-cost-pr.yml. Uploads main's current cost data so every new
+# PR diff has an up-to-date baseline to compare against. Read-only, no
+# AWS credentials (see terraform-cost-pr.yml for why).
+permissions:
+  contents: read
+
+# A newer push to main supersedes an in-flight scan - only the latest
+# baseline matters.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# No workflow_dispatch - a baseline only means something for a real push
+# to main. Paths must stay in sync with terraform-cost-pr.yml.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "IaC/terraform/**"
+      - "IaC/terraform-ecr-repos/**"
+      - "infracost.yml"
+
+jobs:
+  scan:
+    name: Infracost baseline scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # version pins the scanner binary - see terraform-cost-pr.yml.
+      - uses: infracost/actions/scan@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
+        with:
+          version: 0.2.10
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+          path: .

@@ -1,13 +1,15 @@
-name: "[Repo] Terraform Cost"
+name: "[Repo] Terraform Cost - PR Diff"
 
+# PR half of the Infracost setup - main's baseline upload lives in
+# terraform-cost-main.yml. Split per event so neither job shows up as
+# "skipped" on the other's runs.
+#
 # contents: read is just for checkout. pull-requests: write is only
-# needed by the diff job below to post/update the cost comment - scan
-# never touches a PR, so it's scoped to diff's own permissions block
-# instead of granted here workflow-wide. No AWS credentials needed
-# anywhere here - Infracost prices resources by statically parsing the
-# HCL against its own pricing catalog (same as Checkov statically parsing
-# it for security issues), it never touches real state or needs cloud
-# auth, even for the S3-backed root.
+# needed by the job below to post/update the cost comment. No AWS
+# credentials needed - Infracost prices resources by statically parsing
+# the HCL against its own pricing catalog (same as Checkov statically
+# parsing it for security issues), it never touches real state or needs
+# cloud auth, even for the S3-backed root.
 permissions:
   contents: read
 
@@ -18,19 +20,11 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# No workflow_dispatch here, unlike the other two workflows - both jobs
-# below are meaningless outside the event they key off (diff needs a real
-# PR to comment on, scan needs a real push to main to baseline), so
-# there's no useful "run this manually" case.
+# No workflow_dispatch - the job needs a real PR to comment on. Paths
+# must stay in sync with terraform-cost-main.yml.
 on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
-    paths:
-      - "IaC/terraform/**"
-      - "IaC/terraform-ecr-repos/**"
-      - "infracost.yml"
-  push:
-    branches: [main]
     paths:
       - "IaC/terraform/**"
       - "IaC/terraform-ecr-repos/**"
@@ -41,7 +35,7 @@ jobs:
   # infracost.yml at the repo root tells this which two directories are
   # separate projects, so one comment covers both - no matrix needed.
   diff:
-    if: github.event_name == 'pull_request'
+    name: Infracost cost diff vs base
     runs-on: ubuntu-latest
 
     permissions:
@@ -74,19 +68,3 @@ jobs:
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           base-path: base
           head-path: head
-
-  # Uploads baseline cost data for main so the diff job above has
-  # something current to compare each new PR against.
-  scan:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - uses: infracost/actions/scan@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
-        with:
-          version: 0.2.10
-          api-key: ${{ secrets.INFRACOST_API_KEY }}
-          path: .
