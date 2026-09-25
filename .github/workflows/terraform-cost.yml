@@ -63,8 +63,12 @@ jobs:
           ref: ${{ github.event.pull_request.base.ref }}
           path: base
 
+      # version pins the scanner binary the action downloads at runtime -
+      # the SHA above only pins the action's wrapper, and its default
+      # ("latest") would pull whatever Infracost released most recently.
       - uses: infracost/actions/diff@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
         with:
+          version: 0.2.10
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           base-path: base
           head-path: head
@@ -79,5 +83,6 @@ jobs:
 
       - uses: infracost/actions/scan@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
         with:
+          version: 0.2.10
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           path: .
