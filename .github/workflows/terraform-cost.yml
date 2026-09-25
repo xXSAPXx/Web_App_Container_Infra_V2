@@ -1,4 +1,4 @@
-name: Terraform Cost Estimate
+name: "[Repo] Terraform Cost"
 
 # contents: read is just for checkout. pull-requests: write is only
 # needed by the diff job below to post/update the cost comment - scan
@@ -56,15 +56,21 @@ jobs:
         if: github.event.action != 'closed'
         with:
           path: head
+          persist-credentials: false
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: github.event.action != 'closed'
         with:
           ref: ${{ github.event.pull_request.base.ref }}
           path: base
+          persist-credentials: false
 
+      # version pins the scanner binary the action downloads at runtime -
+      # the SHA above only pins the action's wrapper, and its default
+      # ("latest") would pull whatever Infracost released most recently.
       - uses: infracost/actions/diff@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
         with:
+          version: 0.2.10
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           base-path: base
           head-path: head
@@ -76,8 +82,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - uses: infracost/actions/scan@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
         with:
+          version: 0.2.10
           api-key: ${{ secrets.INFRACOST_API_KEY }}
           path: .
