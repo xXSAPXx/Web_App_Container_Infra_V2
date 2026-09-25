@@ -1,4 +1,4 @@
-
+# Pipeline smoke test - do not merge.
 # Required Terraform Providers and Versions:
 terraform {
   required_version = ">= 1.10.0"
