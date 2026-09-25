@@ -1,4 +1,4 @@
-name: Build and Push Images to AWS ECR
+name: "[Repo] Build & Push to ECR"
 
 on:
   # Manual "Build Now" button - Actions tab -> this workflow -> Run

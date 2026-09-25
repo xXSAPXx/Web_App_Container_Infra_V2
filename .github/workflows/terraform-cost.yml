@@ -1,4 +1,4 @@
-name: Terraform Cost Estimate
+name: "[Repo] Terraform Cost"
 
 # contents: read is just for checkout. pull-requests: write is only
 # needed by the diff job below to post/update the cost comment - scan

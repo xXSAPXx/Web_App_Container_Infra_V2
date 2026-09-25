@@ -1,4 +1,4 @@
-name: Scan GitHub Actions Workflows
+name: "[Repo] Actions Scan"
 # Pipeline smoke test - do not merge.
 
 # actionlint's job needs no elevated permissions; zizmor's job overrides
@@ -69,9 +69,8 @@ jobs:
       # Findings upload to the Security tab but do NOT fail this job
       # (zizmor-action's own design: Advanced Security findings are meant
       # to be triaged there, not block merges by default). Expect a batch
-      # of "unpinned-uses" findings on first run, since every action
-      # reference in this repo is currently pinned to a tag rather than a
-      # commit SHA - that's a known, intentional gap to close
-      # incrementally in follow-up PRs, not a bug in this workflow.
+      # All action references in this repo are pinned to commit SHAs, so
+      # "unpinned-uses" findings should only appear if a new unpinned
+      # reference slips in.
       - name: zizmor
         uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4

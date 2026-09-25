@@ -1,4 +1,4 @@
-name: Terraform Checks
+name: "[Repo] Terraform Checks"
 
 # This workflow only reads the repo (checkout, fmt, validate) - it never
 # needs to write anything back via the GITHUB_TOKEN, so scope it down from
