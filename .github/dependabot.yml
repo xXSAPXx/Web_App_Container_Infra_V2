@@ -1,22 +1,28 @@
 version: 2
 
+# cooldown on every ecosystem: Dependabot waits 7 days after a release
+# before proposing it, so a hijacked/malicious release is usually yanked
+# before it ever reaches a PR here. Security updates bypass cooldown, so
+# CVE fixes still arrive immediately.
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
 
-  # Real application dependencies (unlike the actions above, these are
-  # what the 18 vulnerabilities on main are almost certainly coming from -
-  # one entry per directory with its own package.json, npm treats each as
-  # an independent project).
+  # Real application dependencies - one entry per directory with its own
+  # package.json, npm treats each as an independent project.
   - package-ecosystem: "npm"
     directory: "/backend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     groups:
       minor-and-patch:
@@ -26,6 +32,8 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     groups:
       minor-and-patch:
@@ -38,6 +46,8 @@ updates:
     directory: "/backend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
@@ -46,17 +56,21 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
 
-  # Provider version constraints (hashicorp/aws ~> 5.0, etc.) in each of
+  # Provider version constraints (hashicorp/aws ~> 6.63, etc.) in each of
   # the two independent Terraform roots - same reasoning as
   # terraform-checks.yml treating them as separate matrix legs.
   - package-ecosystem: "terraform"
     directory: "/IaC/terraform"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
@@ -65,6 +79,8 @@ updates:
     directory: "/IaC/terraform-ecr-repos"
     schedule:
       interval: "weekly"
+    cooldown:
+      default-days: 7
     groups:
       minor-and-patch:
         update-types: ["minor", "patch"]
