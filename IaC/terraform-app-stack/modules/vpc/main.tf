@@ -126,7 +126,7 @@ resource "aws_subnet" "private_subnet_2" {
 
 # Create a subnet group for the RDS instance
 resource "aws_db_subnet_group" "mydb_subnet_group" {
-  name = "var.rds_subnet_group_name"
+  name = var.rds_subnet_group_name # was the quoted literal "var.rds_subnet_group_name", so the variable was never used
   subnet_ids = [
     aws_subnet.private_subnet_1.id,
     aws_subnet.private_subnet_2.id

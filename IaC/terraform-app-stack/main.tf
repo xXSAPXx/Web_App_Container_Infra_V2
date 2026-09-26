@@ -111,7 +111,7 @@ module "vpc" {
   nat_gateway_public_subnet_id = 1
 
   # --- RDS Subnet Group Settings ---
-  rds_subnet_group_name = "App_DB_Subnet_Group_IaC"
+  rds_subnet_group_name = "calc-app-db-subnet-group" # lowercase only - AWS rejects capitals in DB subnet group names
 
   # --- Route 53 Settings ---
   private_zone_name = "internal.xxsapxx.local"
@@ -765,6 +765,7 @@ resource "helm_release" "kube_prometheus_stack" {
     kubernetes_limit_range.monitoring,
     kubernetes_resource_quota.monitoring,
     kubernetes_storage_class.ebs_gp3,
+    kubernetes_storage_class.ebs_gp3_observability, # values file references it by name - Terraform can't infer this one
     kubernetes_secret.grafana_admin,
     helm_release.tailscale_operator,
   ]
