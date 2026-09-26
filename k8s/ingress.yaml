@@ -19,6 +19,12 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERT_ARN}
     alb.ingress.kubernetes.io/healthcheck-path: /backend
+    # Service tag for this IngressGroup's ALB and target groups (the common
+    # tags come from the controller's defaultTags - see helm_release
+    # .aws_load_balancer_controller). Must be identical on every member of
+    # the group: tags from all members merge onto the one shared ALB, and
+    # conflicting values stop the controller reconciling it.
+    alb.ingress.kubernetes.io/tags: Service=calc-app
 spec:
   ingressClassName: alb
   rules:
@@ -46,6 +52,7 @@ metadata:
     alb.ingress.kubernetes.io/ssl-redirect: "443"
     alb.ingress.kubernetes.io/certificate-arn: ${ACM_CERT_ARN}
     alb.ingress.kubernetes.io/healthcheck-path: /
+    alb.ingress.kubernetes.io/tags: Service=calc-app # must match backend-ingress - see the note there
     # external-dns reads this to create/update the Cloudflare record
     # automatically once the ALB Controller populates this Ingress's
     # status.loadBalancer hostname. Only set on this Ingress (not the
