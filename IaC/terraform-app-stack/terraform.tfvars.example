@@ -1,5 +1,5 @@
 
-# Create a file named terraform.tfvars (Ignored in .gitignore) in /terraform direcroy in your local repo with the needed TF variables:
+# Create a file named terraform.tfvars (Ignored in .gitignore) in /terraform-app-stack directory in your local repo with the needed TF variables:
 # TF_VARS:
 
 # Cloudflare Variables:
@@ -52,3 +52,11 @@ tailscale_oauth_client_secret = <EXAMPLE>
 # bastion directly (Tailscale is the real access path; this is a
 # break-glass fallback). Find it with: curl.exe -s https://api.ipify.org
 my_ip_cidr                    = <EXAMPLE>
+
+# Resource tags (applied to everything via default_tags in main.tf).
+# Environment: one of dev, stage, prod (validated).
+# Owner: the team or handle responsible for this infra.
+# Repository: where this infra is defined, as "owner/repo".
+environment                   = <EXAMPLE>
+owner                         = <EXAMPLE>
+repository                    = <EXAMPLE>

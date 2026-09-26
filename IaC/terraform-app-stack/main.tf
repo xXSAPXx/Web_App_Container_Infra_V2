@@ -52,6 +52,22 @@ module "cloudflare_dns" {
 # AWS provider region:
 provider "aws" {
   region = "us-east-1" # Or use a variable if you prefer
+
+  # Applied to every taggable resource in this stack, modules included.
+  # Resource-level tags win on key collisions, so resources belonging to a
+  # different Service (calc-app, access, observability) override just that
+  # key. Doesn't reach anything AWS/controllers create on their own (EKS
+  # worker instances, the ALB, PVC-backed EBS volumes) - those need their
+  # own tag config.
+  default_tags {
+    tags = {
+      Environment = var.environment
+      Service     = "platform"
+      Owner       = var.owner
+      Repo        = var.repository
+      ManagedBy   = "terraform"
+    }
+  }
 }
 
 # Shared cluster name - passed to both the VPC module (subnet discovery tags)

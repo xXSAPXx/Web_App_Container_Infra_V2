@@ -133,7 +133,8 @@ resource "aws_db_subnet_group" "mydb_subnet_group" {
   ]
 
   tags = {
-    Name = var.rds_subnet_group_name
+    Name    = var.rds_subnet_group_name
+    Service = "calc-app"
   }
 }
 
