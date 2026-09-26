@@ -29,6 +29,10 @@ resource "aws_ecr_repository" "frontend" {
   encryption_configuration {
     encryption_type = "KMS"
   }
+
+  tags = {
+    Service = "calc-app"
+  }
 }
 
 resource "aws_ecr_repository" "backend" {
@@ -42,6 +46,10 @@ resource "aws_ecr_repository" "backend" {
 
   encryption_configuration {
     encryption_type = "KMS"
+  }
+
+  tags = {
+    Service = "calc-app"
   }
 }
 

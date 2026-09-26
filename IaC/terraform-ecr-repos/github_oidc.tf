@@ -21,6 +21,10 @@ resource "aws_iam_openid_connect_provider" "github_actions" {
   lifecycle {
     ignore_changes = [thumbprint_list]
   }
+
+  tags = {
+    Service = "ci"
+  }
 }
 
 # WHO can assume the role - scoped to pushes to this repo's main branch
@@ -54,6 +58,10 @@ data "aws_iam_policy_document" "ecr_push_trust" {
 resource "aws_iam_role" "ecr_push" {
   name               = "github-actions-ecr-push"
   assume_role_policy = data.aws_iam_policy_document.ecr_push_trust.json
+
+  tags = {
+    Service = "ci"
+  }
 }
 
 # WHAT the role can do once assumed - ecr:GetAuthorizationToken has no
