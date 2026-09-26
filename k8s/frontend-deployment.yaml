@@ -29,7 +29,7 @@ spec:
           labelSelector:
             matchLabels:
               app: frontend                        # which pods to spread
-      terminationGracePeriodSeconds: 45            # 15s preStop sleep + ~30s for httpd to exit after its stop signal
+      terminationGracePeriodSeconds: 60            # 30s preStop sleep + ~30s for httpd to exit after its stop signal
       containers:
         - name: frontend
           image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:4a46782"
@@ -52,7 +52,7 @@ spec:
           lifecycle:
             preStop:
               sleep:
-                seconds: 15                        # keep serving while the ALB deregisters this pod, before httpd stops
+                seconds: 30                        # keep serving while the ALB deregisters this pod, before httpd stops - covers an ALB controller leader failover (~21s measured) + ALB propagation
           resources:
             requests:
               cpu: 50m

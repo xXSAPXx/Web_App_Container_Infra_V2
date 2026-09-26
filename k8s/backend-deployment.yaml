@@ -29,7 +29,7 @@ spec:
           labelSelector:
             matchLabels:
               app: backend                         # which pods to spread
-      terminationGracePeriodSeconds: 45            # 15s preStop sleep + ~30s for the app to exit after SIGTERM
+      terminationGracePeriodSeconds: 60            # 30s preStop sleep + ~30s for the app to exit after SIGTERM
       containers:
         - name: backend
           image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-backend:4a46782"
@@ -60,7 +60,7 @@ spec:
           lifecycle:
             preStop:
               sleep:
-                seconds: 15                        # keep serving while the ALB deregisters this pod, before SIGTERM
+                seconds: 30                        # keep serving while the ALB deregisters this pod, before SIGTERM - covers an ALB controller leader failover (~21s measured) + ALB propagation
           resources:
             requests:
               cpu: 100m
