@@ -1,7 +1,7 @@
 
 # Lets GitHub Actions authenticate to AWS by assuming a role directly - no
 # long-lived access keys stored as GitHub secrets. Lives in this persistent
-# stack (not IaC/terraform/) for the same reason the ECR repos do: CI needs
+# stack (not IaC/terraform-app-stack/) for the same reason the ECR repos do: CI needs
 # to be able to build/push an image even when the ephemeral cluster stack
 # is destroyed - see backend.tf.
 #

@@ -18,7 +18,7 @@ There are **two separate Terraform states** here, on purpose:
   into it survive every time you tear down and rebuild the cluster stack, so
   you're not rebuilding/re-pushing images every session. ECR is storage-billed
   (and free under 500MB), not hourly, so there's no cost reason to tear it down.
-- **`IaC/terraform/`** - everything else (VPC, EKS, RDS, bastion, ALB
+- **`IaC/terraform-app-stack/`** - everything else (VPC, EKS, RDS, bastion, ALB
   Controller). This is the ephemeral stack: spin it up for a session, tear it
   down afterward - the EKS control plane and NAT Gateway bill by the hour with
   no "pause" state (see cost notes in the root README), and RDS is restored
@@ -31,7 +31,7 @@ terraform init
 terraform apply
 ```
 
-**Every session** (from `IaC/terraform/`):
+**Every session** (from `IaC/terraform-app-stack/`):
 
 1. Make sure `rds_db_username`/`rds_db_password` are set in `terraform.tfvars`
    (must match the admin user/password already inside the restored RDS
@@ -82,7 +82,7 @@ matches on kind/name/namespace, not the templated content) - this both lets
 the Load Balancer Controller clean up the ALB/target groups it created, *and*
 lets external-dns remove the Cloudflare records it created (its
 `policy: sync` setting means it deletes DNS records for Ingresses that no
-longer exist). *Then* `terraform destroy` **from `IaC/terraform/` only** -
+longer exist). *Then* `terraform destroy` **from `IaC/terraform-app-stack/` only** -
 otherwise Terraform doesn't know about (and can't clean up) resources the
 controllers created directly in AWS/Cloudflare. Do **not** run
 `terraform destroy` in `IaC/terraform-ecr-repos/` unless you actually want to
@@ -137,7 +137,7 @@ project after a break, since none of it is a single `terraform apply` anymore):
   plain Terraform (`module.alb_ssl_cert_validation`), independent of the ALB's
   existence.
 - **Everything else in this diagram** (VPC, EKS cluster/node group, RDS,
-  bastion, IAM) — plain Terraform, in `IaC/terraform/`.
+  bastion, IAM) — plain Terraform, in `IaC/terraform-app-stack/`.
 
 
 # Network Policy (default-deny baseline):

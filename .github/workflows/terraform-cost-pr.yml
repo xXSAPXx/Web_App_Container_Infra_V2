@@ -26,7 +26,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, closed]
     paths:
-      - "IaC/terraform/**"
+      - "IaC/terraform-app-stack/**"
       - "IaC/terraform-ecr-repos/**"
       - "infracost.yml"
 
