@@ -23,6 +23,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
+          storageClassName: ebs-gp3-observability   # tags the volume Service=observability (see kubernetes_storage_class in ../main.tf)
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -80,6 +81,7 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
+          storageClassName: ebs-gp3-observability   # tags the volume Service=observability (see kubernetes_storage_class in ../main.tf)
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -97,6 +99,7 @@ grafana:
   persistence:
     enabled: true
     type: pvc
+    storageClassName: ebs-gp3-observability     # tags the volume Service=observability (see kubernetes_storage_class in ../main.tf)
     accessModes: ["ReadWriteOnce"]
     size: 1Gi
 
