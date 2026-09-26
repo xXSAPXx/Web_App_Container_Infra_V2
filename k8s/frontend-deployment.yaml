@@ -20,24 +20,39 @@ spec:
       labels:
         app: frontend
     spec:
+      topologySpreadConstraints:
+        - maxSkew: 1                               # replica count per node may differ by at most 1
+          topologyKey: kubernetes.io/hostname      # spread across nodes (1 node per AZ here, so AZs too)
+          whenUnsatisfiable: DoNotSchedule         # hard rule - never put both replicas on one node
+          nodeTaintsPolicy: Honor                  # ignore cordoned nodes, so a drained pod can still reschedule
+          matchLabelKeys: [pod-template-hash]      # count per ReplicaSet revision, so rollout surge pods aren't blocked
+          labelSelector:
+            matchLabels:
+              app: frontend                        # which pods to spread
+      terminationGracePeriodSeconds: 45            # 15s preStop sleep + ~30s for httpd to exit after its stop signal
       containers:
         - name: frontend
           image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:4a46782"
           imagePullPolicy: Always
           ports:
             - containerPort: 80
-          readinessProbe:
+          readinessProbe:                          # "should this pod get traffic?" - fails fast, never restarts the pod
             httpGet:
-              path: /
+              path: /                              # the page httpd actually serves
               port: 80
             initialDelaySeconds: 5
-            periodSeconds: 10
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 80
+            periodSeconds: 5                       # check often...
+            failureThreshold: 2                    # ...out of rotation after ~10s of failures
+          livenessProbe:                           # "is the process hung?" - restarts the pod, so kept lighter and patient
+            tcpSocket:
+              port: 80                             # just "is the socket accepting" - differs from readiness on purpose
             initialDelaySeconds: 10
-            periodSeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3                    # restart only after ~60s unresponsive
+          lifecycle:
+            preStop:
+              sleep:
+                seconds: 15                        # keep serving while the ALB deregisters this pod, before httpd stops
           resources:
             requests:
               cpu: 50m
@@ -45,3 +60,20 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+---
+# Limits VOLUNTARY disruptions (node drains, node group upgrades, autoscaler
+# scale-down) - a drain waits here instead of evicting both replicas at once.
+# Rollouts are governed by maxUnavailable above instead. Lives in this file
+# because its selector must match the Deployment's labels - a PDB selecting
+# nothing silently protects nothing.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend
+  namespace: calc-app
+spec:
+  minAvailable: 1                                # at least 1 of the 2 replicas stays up during a drain
+  unhealthyPodEvictionPolicy: AlwaysAllow        # a crash-looping pod can still be evicted - don't let it block drains
+  selector:
+    matchLabels:
+      app: frontend                              # must match the Deployment's pod labels above

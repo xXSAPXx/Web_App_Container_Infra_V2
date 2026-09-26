@@ -457,6 +457,10 @@ resource "null_resource" "destroy_k8s_manifests" {
 resource "kubernetes_namespace" "calc_app" {
   metadata {
     name = "calc-app"
+
+    labels = {
+      "elbv2.k8s.aws/pod-readiness-gate-inject" = "enabled" # ALB controller adds a readiness gate to new pods here: a pod only counts as Ready once the ALB sees it healthy
+    }
   }
 
   depends_on = [module.eks]
