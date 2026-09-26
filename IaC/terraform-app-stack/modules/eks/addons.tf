@@ -57,6 +57,14 @@ resource "aws_eks_addon" "ebs_csi" {
   resolve_conflicts_on_update = "OVERWRITE"
   service_account_role_arn    = aws_iam_role.ebs_csi_irsa.arn
 
+  # Only affects volumes created from now on - the driver never retags
+  # existing ones.
+  configuration_values = jsonencode({
+    controller = {
+      extraVolumeTags = var.ebs_csi_volume_tags
+    }
+  })
+
   # Its controller Deployment and node-plugin DaemonSet both need
   # somewhere to actually schedule, same reasoning as coredns/kube-proxy.
   depends_on = [aws_eks_node_group.this]

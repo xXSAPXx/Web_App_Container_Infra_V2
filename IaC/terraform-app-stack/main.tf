@@ -56,24 +56,32 @@ provider "aws" {
   # Applied to every taggable resource in this stack, modules included.
   # Resource-level tags win on key collisions, so resources belonging to a
   # different Service (calc-app, access, observability) override just that
-  # key. Doesn't reach anything AWS/controllers create on their own (EKS
-  # worker instances, the ALB, PVC-backed EBS volumes) - those need their
-  # own tag config.
+  # key. Doesn't reach anything AWS/controllers create on their own (the
+  # ALB, PVC-backed EBS volumes, EKS worker instances) - those get
+  # local.common_tags through their own config instead.
   default_tags {
-    tags = {
-      Environment = var.environment
-      Service     = "platform"
-      Owner       = var.owner
-      Repo        = var.repository
-      ManagedBy   = "terraform"
-    }
+    tags = merge(local.common_tags, {
+      Service   = "platform"
+      ManagedBy = "terraform"
+    })
   }
 }
 
-# Shared cluster name - passed to both the VPC module (subnet discovery tags)
-# and the EKS module (the cluster itself), so they can't drift apart.
 locals {
+  # Shared cluster name - passed to both the VPC module (subnet discovery
+  # tags) and the EKS module (the cluster itself), so they can't drift apart.
   eks_cluster_name = "app-eks-cluster"
+
+  # Tags every AWS resource in this stack carries, whoever creates it -
+  # Terraform (default_tags above), the ALB controller (defaultTags) or the
+  # EBS CSI driver (extraVolumeTags). Service and ManagedBy are left to each
+  # consumer: ManagedBy names whatever actually owns the resource, so it
+  # points at the right place to change it.
+  common_tags = {
+    Environment = var.environment
+    Owner       = var.owner
+    Repo        = var.repository
+  }
 }
 
 
@@ -261,6 +269,13 @@ module "eks" {
 
   eks_node_security_group_id = module.security_groups.eks_node_security_group_id
   my_ip_cidr                 = var.my_ip_cidr
+
+  # Tags the EBS CSI driver puts on every PVC-backed volume it creates.
+  # No Service: that comes from the StorageClass the PVC uses
+  # (tagSpecification), since one driver serves every app's volumes.
+  ebs_csi_volume_tags = merge(local.common_tags, {
+    ManagedBy = "ebs-csi-driver"
+  })
 }
 
 
@@ -303,6 +318,22 @@ resource "helm_release" "aws_load_balancer_controller" {
   set {
     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
     value = module.eks.alb_controller_irsa_role_arn
+  }
+
+  # Tags on everything the controller creates (ALB, target groups, its
+  # security groups). No Service here on purpose: the controller's
+  # defaultTags take priority over Ingress annotation tags, so a Service
+  # set here would force every ALB into one. Service is set per
+  # IngressGroup instead, via alb.ingress.kubernetes.io/tags in
+  # k8s/ingress.yaml.
+  dynamic "set" {
+    for_each = merge(local.common_tags, {
+      ManagedBy = "aws-load-balancer-controller"
+    })
+    content {
+      name  = "defaultTags.${set.key}"
+      value = set.value
+    }
   }
 
   depends_on = [module.eks]
@@ -598,6 +629,33 @@ resource "kubernetes_storage_class" "ebs_gp3" {
   parameters = {
     type      = "gp3"
     encrypted = "true"
+  }
+
+  depends_on = [module.eks] # needs the ebs_csi addon (modules/eks/addons.tf)
+}
+
+
+# Same as ebs-gp3 above, but tags every volume it creates
+# Service=observability - for the monitoring stack's PVCs (Prometheus,
+# Alertmanager, Grafana), so their storage shows up under observability in
+# Cost Explorer. A separate class because Service can only be set per
+# StorageClass (the driver's extraVolumeTags is one fixed set for every
+# volume), and ebs-gp3 is the cluster-wide default. The common tags
+# (Environment/Owner/Repo/ManagedBy) come from extraVolumeTags.
+resource "kubernetes_storage_class" "ebs_gp3_observability" {
+  metadata {
+    name = "ebs-gp3-observability"
+  }
+
+  storage_provisioner    = "ebs.csi.aws.com"
+  reclaim_policy         = "Delete"               # same reasoning as ebs-gp3
+  volume_binding_mode    = "WaitForFirstConsumer" # same reasoning as ebs-gp3
+  allow_volume_expansion = false
+
+  parameters = {
+    type               = "gp3"
+    encrypted          = "true"
+    tagSpecification_1 = "Service=observability"
   }
 
   depends_on = [module.eks] # needs the ebs_csi addon (modules/eks/addons.tf)

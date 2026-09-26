@@ -53,6 +53,12 @@ variable "my_ip_cidr" {
   description = "Your personal IP, as a /32 - the only address allowed to reach the public EKS API endpoint directly. endpoint_private_access already covers in-VPC/Tailscale access regardless of this."
 }
 
+variable "ebs_csi_volume_tags" {
+  type        = map(string)
+  description = "Tags the EBS CSI driver applies to every volume it creates (extraVolumeTags). Service is set per StorageClass instead."
+  default     = {}
+}
+
 
 ##############################################
 # LOGGING / ENCRYPTION:

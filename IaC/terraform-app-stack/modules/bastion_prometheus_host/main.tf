@@ -9,6 +9,10 @@ locals {
   })
 }
 
+# The AWS provider's default_tags (Environment/Owner/Repo/...) - merged into
+# the root volume's tags below, since default_tags don't reach block devices.
+data "aws_default_tags" "current" {}
+
 
 ########################################################################
 # Public EC2 - Bastion / Jump_Host (SSH + DB connectivity testing):
@@ -26,6 +30,14 @@ resource "aws_instance" "bastion_prometheus" {
   root_block_device {
     volume_size = var.volume_size
     volume_type = var.volume_type
+
+    # The provider's default_tags never reach block devices (tags_all stays
+    # empty here), so merge them in explicitly - read from the provider
+    # itself, so this can't drift from the rest of the stack.
+    tags = merge(data.aws_default_tags.current.tags, {
+      Name    = "${var.bastion_host_tag_name}-root"
+      Service = "access"
+    })
   }
 
   # IMDSv2 only - IMDSv1's plain HTTP GET (no token) is the classic
