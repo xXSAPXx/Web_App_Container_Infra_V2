@@ -22,7 +22,7 @@ terraform {
     }
     helm = {
       source  = "hashicorp/helm"
-      version = "~> 2.16"
+      version = "~> 3.3"
     }
     # Generates values (like the backend's JWT signing secret) that Terraform
     # itself has no built-in way to create and persist - random_password
