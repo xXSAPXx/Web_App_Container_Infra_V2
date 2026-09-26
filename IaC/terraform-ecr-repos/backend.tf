@@ -1,5 +1,5 @@
 
-# Separate state from IaC/terraform/ on purpose - these ECR repos are meant
+# Separate state from IaC/terraform-app-stack/ on purpose - these ECR repos are meant
 # to persist across every destroy/apply cycle of the ephemeral cluster stack,
 # so images never need to be rebuilt/re-pushed just because the cluster was
 # torn down and recreated.

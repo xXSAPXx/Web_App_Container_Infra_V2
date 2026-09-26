@@ -4,7 +4,7 @@
 # DNS name now, see modules/database/main.tf, so it no longer needs to be
 # read/templated per session), then applies them.
 #
-# Run this AFTER `terraform apply` in IaC/terraform has finished - it reads
+# Run this AFTER `terraform apply` in IaC/terraform-app-stack has finished - it reads
 # that stack's outputs directly. Requires: terraform, kubectl, envsubst
 # (ships with Git for Windows / most Linux distros via gettext).
 #
@@ -14,7 +14,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TF_DIR="$SCRIPT_DIR/terraform"
+TF_DIR="$SCRIPT_DIR/terraform-app-stack"
 K8S_DIR="$REPO_ROOT/k8s"
 RENDERED_DIR="$K8S_DIR/rendered"
 

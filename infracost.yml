@@ -4,7 +4,7 @@
 # reference to this file needed in the workflow itself.
 version: 0.1
 projects:
-  - path: IaC/terraform
+  - path: IaC/terraform-app-stack
     name: cluster
   - path: IaC/terraform-ecr-repos
     name: ecr-repos

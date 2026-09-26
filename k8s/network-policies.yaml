@@ -1,10 +1,10 @@
 # Default-deny baseline for the calc-app namespace, plus explicit allows for
 # every real traffic path the app needs. Enforced by the vpc-cni add-on's
 # network policy agent (enabled via configuration_values in
-# IaC/terraform/modules/eks/addons.tf) - without that, these objects would
+# IaC/terraform-app-stack/modules/eks/addons.tf) - without that, these objects would
 # apply but silently do nothing.
 #
-# Subnet CIDRs below are hardcoded to match IaC/terraform/modules/vpc's
+# Subnet CIDRs below are hardcoded to match IaC/terraform-app-stack/modules/vpc's
 # defaults (public: 10.0.0.0/20 + 10.0.16.0/20, private: 10.0.32.0/19 +
 # 10.0.64.0/19) - update here if those ever change.
 #

@@ -1,6 +1,6 @@
 
 # Persistent ECR repositories - apply this ONCE, independent of the main
-# IaC/terraform/ stack. See IaC/README.md for the full apply order.
+# IaC/terraform-app-stack/ stack. See IaC/README.md for the full apply order.
 
 module "ecr" {
   source = "./modules/ecr"

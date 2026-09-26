@@ -56,7 +56,7 @@ updates:
   # the two independent Terraform roots - same reasoning as
   # terraform-checks.yml treating them as separate matrix legs.
   - package-ecosystem: "terraform"
-    directory: "/IaC/terraform"
+    directory: "/IaC/terraform-app-stack"
     schedule:
       interval: "weekly"
     cooldown:
