@@ -1,0 +1,9 @@
+
+# Create a file named terraform.tfvars (Ignored in .gitignore) in /terraform-ecr-repos directory in your local repo with the needed TF variables:
+# TF_VARS:
+
+# Resource tags (applied to everything via default_tags in providers.tf).
+# Owner: the team or handle responsible for this infra.
+# Repository: where this infra is defined, as "owner/repo".
+owner                      = <EXAMPLE>
+repository                 = <EXAMPLE>
