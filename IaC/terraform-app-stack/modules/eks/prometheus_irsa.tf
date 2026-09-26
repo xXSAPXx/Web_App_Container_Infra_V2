@@ -33,6 +33,10 @@ resource "aws_iam_role" "prometheus_irsa" {
       }
     ]
   })
+
+  tags = {
+    Service = "observability"
+  }
 }
 
 resource "aws_iam_policy" "prometheus_ec2_describe" {
@@ -49,6 +53,10 @@ resource "aws_iam_policy" "prometheus_ec2_describe" {
       }
     ]
   })
+
+  tags = {
+    Service = "observability"
+  }
 }
 
 resource "aws_iam_role_policy_attachment" "prometheus_irsa" {

@@ -19,8 +19,9 @@ resource "aws_acm_certificate" "alb_cert" {
   subject_alternative_names = var.san # Added the www subdomain here
   validation_method         = var.validation_method
 
+  # Environment comes from the provider's default_tags now.
   tags = {
-    Environment = "prod"
+    Service = "calc-app"
   }
 
   lifecycle {

@@ -47,6 +47,10 @@ resource "aws_db_parameter_group" "mydb" {
     name  = "require_secure_transport"
     value = "1"
   }
+
+  tags = {
+    Service = "calc-app"
+  }
 }
 
 
@@ -91,6 +95,10 @@ resource "aws_db_instance" "mydb" {
   # coming out untagged - otherwise they're anonymous blobs in the console
   # with no way to tell which app they belong to.
   copy_tags_to_snapshot = true
+
+  tags = {
+    Service = "calc-app"
+  }
 }
 
 

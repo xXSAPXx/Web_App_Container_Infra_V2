@@ -98,3 +98,29 @@ variable "my_ip_cidr" {
   sensitive   = true
   description = "Your personal IP, as a /32 - the only address allowed to SSH into the bastion directly. Never 0.0.0.0/0"
 }
+
+
+# Resource tags - fed into the AWS provider's default_tags (main.tf). No
+# defaults on purpose: anyone reusing this repo sets their own values in
+# terraform.tfvars instead of inheriting ours. environment is validated so
+# tag values can't drift in casing/spelling (prod vs Prod vs production) -
+# Cost Explorer groups by exact string.
+variable "environment" {
+  type        = string
+  description = "Environment tag applied to every resource in this stack"
+
+  validation {
+    condition     = contains(["dev", "stage", "prod"], var.environment)
+    error_message = "environment must be one of: dev, stage, prod."
+  }
+}
+
+variable "owner" {
+  type        = string
+  description = "Owner tag applied to every resource (team or handle responsible for it)"
+}
+
+variable "repository" {
+  type        = string
+  description = "Repo tag applied to every resource - where this infra is defined (owner/repo)"
+}
