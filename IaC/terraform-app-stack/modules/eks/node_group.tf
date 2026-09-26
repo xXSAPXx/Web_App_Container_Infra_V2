@@ -48,6 +48,9 @@ resource "aws_iam_role_policy_attachment" "eks_ssm_policy" {
 # the EKS-managed cluster security group, and to enforce IMDSv2.
 ##################################################################
 
+# The AWS provider's default_tags - merged into tag_specifications below.
+data "aws_default_tags" "current" {}
+
 resource "aws_launch_template" "eks_node" {
   name_prefix = "${var.cluster_name}-node-"
 
@@ -109,11 +112,22 @@ resource "aws_launch_template" "eks_node" {
     aws_eks_cluster.this.vpc_config[0].cluster_security_group_id,
   ]
 
+  # default_tags only tag the launch template resource itself, never what
+  # EKS launches from it - the worker instances and their root volumes
+  # (the stack's biggest cost) need the tags here explicitly. Changing
+  # these creates a new template version, which rolls the node group.
   tag_specifications {
     resource_type = "instance"
-    tags = {
+    tags = merge(data.aws_default_tags.current.tags, {
       Name = "${var.cluster_name}-node"
-    }
+    })
+  }
+
+  tag_specifications {
+    resource_type = "volume"
+    tags = merge(data.aws_default_tags.current.tags, {
+      Name = "${var.cluster_name}-node-root"
+    })
   }
 
   lifecycle {
