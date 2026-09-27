@@ -77,9 +77,11 @@ spec:
             requests:
               cpu: 100m
               memory: 128Mi
+              ephemeral-storage: 50Mi              # node disk reserved for logs + writable layer
             limits:
               cpu: 250m
               memory: 256Mi
+              ephemeral-storage: 250Mi             # over this, only this pod is evicted - not the whole node via DiskPressure
 ---
 # Limits VOLUNTARY disruptions (node drains, node group upgrades, autoscaler
 # scale-down) - a drain waits here instead of evicting both replicas at once.
