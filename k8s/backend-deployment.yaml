@@ -7,6 +7,7 @@ metadata:
     app: backend
 spec:
   replicas: 2
+  minReadySeconds: 10                              # new pod must stay Ready 10s before the rollout moves on - catches pods that crash right after starting
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -22,10 +23,17 @@ spec:
     spec:
       topologySpreadConstraints:
         - maxSkew: 1                               # replica count per node may differ by at most 1
-          topologyKey: kubernetes.io/hostname      # spread across nodes (1 node per AZ here, so AZs too)
+          topologyKey: kubernetes.io/hostname      # spread across nodes
           whenUnsatisfiable: DoNotSchedule         # hard rule - never put both replicas on one node
           nodeTaintsPolicy: Honor                  # ignore cordoned nodes, so a drained pod can still reschedule
           matchLabelKeys: [pod-template-hash]      # count per ReplicaSet revision, so rollout surge pods aren't blocked
+          labelSelector:
+            matchLabels:
+              app: backend                         # which pods to spread
+        - maxSkew: 1                               # replica count per AZ may differ by at most 1
+          topologyKey: topology.kubernetes.io/zone # spread across AZs - the node rule alone allows both replicas in one AZ
+          whenUnsatisfiable: ScheduleAnyway        # soft rule - during an AZ outage pods still schedule instead of staying Pending
+          matchLabelKeys: [pod-template-hash]      # count per ReplicaSet revision
           labelSelector:
             matchLabels:
               app: backend                         # which pods to spread
@@ -44,17 +52,21 @@ spec:
           # server.js calls process.exit(1) if it can't reach the DB on boot,
           # so a pod that can't reach RDS will crash-loop until it can - that's
           # expected/fine, Kubernetes just keeps restarting it.
+          startupProbe:                            # "has the app finished booting?" - readiness/liveness wait until this passes
+            httpGet:
+              path: /backend
+              port: 3000
+            periodSeconds: 2
+            failureThreshold: 30                   # up to ~60s to boot before the container is restarted
           readinessProbe:                          # "should this pod get traffic?" - fails fast, never restarts the pod
             httpGet:
               path: /backend                       # static OK, no DB call
               port: 3000
-            initialDelaySeconds: 5
             periodSeconds: 5                       # check often...
             failureThreshold: 2                    # ...out of rotation after ~10s of failures
           livenessProbe:                           # "is the process hung?" - restarts the pod, so kept lighter and patient
             tcpSocket:
               port: 3000                           # just "is the socket accepting" - differs from readiness on purpose
-            initialDelaySeconds: 15
             periodSeconds: 20
             failureThreshold: 3                    # restart only after ~60s unresponsive
           lifecycle:
