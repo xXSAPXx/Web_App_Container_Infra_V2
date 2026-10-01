@@ -29,33 +29,11 @@ updates:
       minor-and-patch:
         update-types: ["minor", "patch"]
 
-  # Base image tags pinned in each Dockerfile (node:24-alpine,
-  # httpd:2.4-alpine) - directory is wherever the Dockerfile itself lives,
-  # same convention as npm above.
-  - package-ecosystem: "docker"
-    directory: "/backend"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
-  - package-ecosystem: "docker"
-    directory: "/frontend"
-    schedule:
-      interval: "weekly"
-    cooldown:
-      default-days: 7
-    groups:
-      minor-and-patch:
-        update-types: ["minor", "patch"]
-
   # Upstream FROM lines of the trusted base images - a merged bump
   # triggers curate-base-images.yml, which publishes a new trusted image.
-  # (The /backend and /frontend entries above go away once those
-  # Dockerfiles build FROM the trusted repo instead of Docker Hub.)
+  # backend/ and frontend/ Dockerfiles aren't watched: they build FROM the
+  # private trusted_base_images repo (pinned tag + digest), which
+  # Dependabot can't read - their bumps are PRs after each curation run.
   - package-ecosystem: "docker"
     directories: ["/base-images/httpd", "/base-images/node"]
     schedule:

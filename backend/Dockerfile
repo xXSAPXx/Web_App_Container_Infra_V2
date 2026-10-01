@@ -1,9 +1,12 @@
 
 # -----------------------------------------------------------------------------------------------
 # Base image
-# Use the official Node.js Alpine image as a base for the backend service: 
+# Trusted, patched + scanned copy of node:26-alpine (see base-images/node and
+# .github/workflows/curate-base-images.yml). Pinned by tag (readable) AND digest
+# (immutable - Docker uses the digest). Bump both via PR when a new curated tag lands.
+# Building locally needs an ECR login first (see IaC/README.md).
 # -----------------------------------------------------------------------------------------------
-FROM node:26-alpine AS base
+FROM 341587087009.dkr.ecr.us-east-1.amazonaws.com/trusted_base_images:node-26-alpine-1.1@sha256:aa412a145d4fe148bb3cc40068ff5dadb4ed2b882e7cde847343344dfe6851e7 AS base
 WORKDIR /app
 
 # -----------------------------------------------------------------------------------------------
