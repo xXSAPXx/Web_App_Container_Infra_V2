@@ -1,0 +1,104 @@
+name: "[Repo] Curate Trusted Base Images"
+
+# Builds patched copies of the upstream base images (base-images/*), scans
+# them, and publishes them to ECR trusted_base_images ONLY if the scan is
+# clean. App Dockerfiles build FROM these instead of Docker Hub, so a CVE
+# Alpine has fixed but the upstream image hasn't picked up yet no longer
+# blocks the app pipeline.
+
+permissions:
+  contents: read
+
+# Queue rather than cancel: each run publishes its own immutable tags, and
+# a run cut off between scan and push would just be wasted work.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+on:
+  # Manual "Build Now" button - e.g. right after a CVE fix lands upstream.
+  workflow_dispatch:
+  # Weekly refresh (Mon 04:00 UTC): picks up new Alpine fixes via apk
+  # upgrade even when nothing in this repo changed. Scheduled runs always
+  # execute on main, which the curator role's trust policy requires.
+  schedule:
+    - cron: "0 4 * * 1"
+  # A base image definition changed (e.g. a Dependabot bump of the
+  # upstream FROM, once merged).
+  push:
+    branches: [main]
+    paths:
+      - "base-images/**"
+
+jobs:
+  curate:
+    runs-on: ubuntu-latest
+
+    # id-token: write lets this job request the OIDC token it trades for
+    # the curator role's temporary AWS credentials - see build-push-images.yml.
+    permissions:
+      contents: read
+      id-token: write
+
+    # Each base image is independent - a CVE in one shouldn't stop the
+    # other from being published.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: httpd-2.4-alpine
+            context: base-images/httpd
+          - image: node-26-alpine
+            context: base-images/node
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # Built locally first, no AWS credentials yet - nothing can reach the
+      # registry before the scan below has passed.
+      - name: Build ${{ matrix.image }}
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: ${{ matrix.context }}
+          pull: true      # always the newest upstream image for this tag
+          no-cache: true  # always re-run apk upgrade, never a cached layer
+          push: false
+          load: true
+          tags: local/${{ matrix.image }}:scan
+
+      # Same gate as build-push-images.yml: any CRITICAL finding fails the
+      # job, so the steps that publish never run.
+      - name: Scan ${{ matrix.image }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: local/${{ matrix.image }}:scan
+          exit-code: "1"
+          severity: "CRITICAL"
+
+      # Credentials only from here on - i.e. only for images that passed.
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
+        with:
+          role-to-assume: ${{ secrets.AWS_BASE_IMAGE_CURATOR_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Log in to ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
+
+      # <image>-<run number>.<attempt>: the repo is IMMUTABLE, so a re-run
+      # of a failed job needs a tag of its own (run_number alone would
+      # collide). The digest goes to the run summary for traceability.
+      - name: Publish ${{ matrix.image }}
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          IMAGE: ${{ matrix.image }}
+        run: |
+          TARGET="${REGISTRY}/trusted_base_images:${IMAGE}-${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          docker tag "local/${IMAGE}:scan" "${TARGET}"
+          docker push "${TARGET}"
+          DIGEST=$(docker inspect --format '{{index .RepoDigests 0}}' "${TARGET}")
+          echo "Published \`${TARGET}\`  " >> "$GITHUB_STEP_SUMMARY"
+          echo "Digest: \`${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"
