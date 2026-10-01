@@ -97,10 +97,69 @@ data "aws_iam_policy_document" "ecr_push_permissions" {
       module.ecr.backend_repository_arn,
     ]
   }
+
+  # READ-ONLY on the trusted base images: app builds pull their FROM image
+  # from there, and DescribeImages lets build-push look up the newest
+  # trusted tag. No push actions - only the curator role below can publish
+  # base images, so a compromised app build can't tamper with them.
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:DescribeImages",
+    ]
+    resources = [module.ecr.trusted_base_images_repository_arn]
+  }
 }
 
 resource "aws_iam_role_policy" "ecr_push_permissions" {
   name   = "ecr-push"
   role   = aws_iam_role.ecr_push.id
   policy = data.aws_iam_policy_document.ecr_push_permissions.json
+}
+
+
+# Separate role for the base-image curation workflow - the only identity
+# allowed to PUBLISH into trusted_base_images. Same trust as ecr_push
+# (this repo's main branch only; scheduled and manual runs both execute on
+# main), but its permissions are scoped to the trusted repo alone, so it
+# can't touch the app image repos either.
+resource "aws_iam_role" "base_image_curator" {
+  name               = "github-actions-base-image-curator"
+  assume_role_policy = data.aws_iam_policy_document.ecr_push_trust.json
+
+  tags = {
+    Service = "ci"
+  }
+}
+
+data "aws_iam_policy_document" "base_image_curator_permissions" {
+  statement {
+    effect    = "Allow"
+    actions   = ["ecr:GetAuthorizationToken"] # no resource-level scoping in AWS - see ecr_push above
+    resources = ["*"]
+  }
+
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+      "ecr:PutImage",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:DescribeImages",
+    ]
+    resources = [module.ecr.trusted_base_images_repository_arn]
+  }
+}
+
+resource "aws_iam_role_policy" "base_image_curator_permissions" {
+  name   = "base-image-curator"
+  role   = aws_iam_role.base_image_curator.id
+  policy = data.aws_iam_policy_document.base_image_curator_permissions.json
 }
