@@ -51,22 +51,9 @@ jobs:
         with:
           persist-credentials: false
 
-      # backend/Dockerfile has a "test" stage (RUN npm run test) that
-      # nothing was ever targeting - the regular build below only builds
-      # the last stage (production) by default, so tests never actually
-      # ran in CI. This targets that stage directly: no push, no load,
-      # the point is just that RUN npm run test either exits 0 or fails
-      # the build. Runs first - fail fast before wasting time on a build/
-      # scan of code whose tests don't even pass. frontend has no test
-      # framework (static Apache site), hence run_tests being per-service.
-      - name: Run tests
-        if: matrix.run_tests
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
-        with:
-          context: ${{ matrix.dockerfile_dir }}
-          target: test
-          push: false
-
+      # Before any docker build: both Dockerfiles build FROM the private
+      # trusted_base_images repo, so even the test build below needs the
+      # ECR login to pull its base image (pull-only access on that repo).
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
@@ -76,6 +63,23 @@ jobs:
       - name: Log in to ECR
         id: ecr-login
         uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
+
+      # backend/Dockerfile has a "test" stage (RUN npm run test) that
+      # nothing was ever targeting - the regular build below only builds
+      # the last stage (production) by default, so tests never actually
+      # ran in CI. This targets that stage directly: no push, no load,
+      # the point is just that RUN npm run test either exits 0 or fails
+      # the build. First build of the job - fail fast before wasting time
+      # on a build/scan of code whose tests don't even pass. frontend has
+      # no test framework (static Apache site), hence run_tests being
+      # per-service.
+      - name: Run tests
+        if: matrix.run_tests
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: ${{ matrix.dockerfile_dir }}
+          target: test
+          push: false
 
       # GITHUB_SHA is the full 40-char commit SHA - not something anyone
       # wants to type/read, so this trims it the same way GitHub's own UI
