@@ -52,6 +52,20 @@ updates:
       minor-and-patch:
         update-types: ["minor", "patch"]
 
+  # Upstream FROM lines of the trusted base images - a merged bump
+  # triggers curate-base-images.yml, which publishes a new trusted image.
+  # (The /backend and /frontend entries above go away once those
+  # Dockerfiles build FROM the trusted repo instead of Docker Hub.)
+  - package-ecosystem: "docker"
+    directories: ["/base-images/httpd", "/base-images/node"]
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    groups:
+      minor-and-patch:
+        update-types: ["minor", "patch"]
+
   # Provider version constraints (hashicorp/aws ~> 6.63, etc.) in each of
   # the two independent Terraform roots - same reasoning as
   # terraform-checks.yml treating them as separate matrix legs.
