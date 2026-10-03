@@ -8,5 +8,5 @@ spec:
   selector:
     app: frontend
   ports:
-    - port: 80
-      targetPort: 80
+    - port: 80                                   # what the Ingress references - unchanged
+      targetPort: 8080                           # the pod's port; the ALB controller registers pod-IP:8080 from this
