@@ -290,51 +290,27 @@ resource "helm_release" "aws_load_balancer_controller" {
   namespace  = "kube-system"
   version    = "1.8.1"
 
-  set {
-    name  = "clusterName"
-    value = module.eks.cluster_name
-  }
-
-  set {
-    name  = "region"
-    value = "us-east-1"
-  }
-
-  set {
-    name  = "vpcId"
-    value = module.vpc.vpc_id
-  }
-
-  set {
-    name  = "serviceAccount.create"
-    value = "true"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"
-  }
-
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.eks.alb_controller_irsa_role_arn
-  }
-
-  # Tags on everything the controller creates (ALB, target groups, its
-  # security groups). No Service here on purpose: the controller's
-  # defaultTags take priority over Ingress annotation tags, so a Service
-  # set here would force every ALB into one. Service is set per
-  # IngressGroup instead, via alb.ingress.kubernetes.io/tags in
-  # k8s/ingress.yaml.
-  dynamic "set" {
-    for_each = merge(local.common_tags, {
-      ManagedBy = "aws-load-balancer-controller"
-    })
-    content {
-      name  = "defaultTags.${set.key}"
-      value = set.value
-    }
-  }
+  # Helm provider v3: `set` is a list attribute, not repeated blocks.
+  set = concat(
+    [
+      { name = "clusterName", value = module.eks.cluster_name },
+      { name = "region", value = "us-east-1" },
+      { name = "vpcId", value = module.vpc.vpc_id },
+      { name = "serviceAccount.create", value = "true" },
+      { name = "serviceAccount.name", value = "aws-load-balancer-controller" },
+      { name = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn", value = module.eks.alb_controller_irsa_role_arn },
+    ],
+    # Tags on everything the controller creates (ALB, target groups, its
+    # security groups). No Service here on purpose: the controller's
+    # defaultTags take priority over Ingress annotation tags, so a Service
+    # set here would force every ALB into one. Service is set per
+    # IngressGroup instead, via alb.ingress.kubernetes.io/tags in
+    # k8s/ingress.yaml.
+    [
+      for key, value in merge(local.common_tags, { ManagedBy = "aws-load-balancer-controller" }) :
+      { name = "defaultTags.${key}", value = value }
+    ],
+  )
 
   depends_on = [module.eks]
 }
@@ -374,45 +350,17 @@ resource "helm_release" "external_dns" {
   namespace  = "kube-system"
   version    = "1.15.0"
 
-  set {
-    name  = "provider.name"
-    value = "cloudflare"
-  }
-
-  set {
-    name  = "env[0].name"
-    value = "CF_API_TOKEN"
-  }
-
-  set {
-    name  = "env[0].valueFrom.secretKeyRef.name"
-    value = kubernetes_secret.cloudflare_api_token.metadata[0].name
-  }
-
-  set {
-    name  = "env[0].valueFrom.secretKeyRef.key"
-    value = "cloudflare_api_token"
-  }
-
-  set {
-    name  = "policy"
-    value = "sync"
-  }
-
-  set {
-    name  = "sources[0]"
-    value = "ingress"
-  }
-
-  set {
-    name  = "domainFilters[0]"
-    value = var.cloudflare_domain_name
-  }
-
-  set {
-    name  = "txtOwnerId"
-    value = local.eks_cluster_name
-  }
+  # Helm provider v3: `set` is a list attribute, not repeated blocks.
+  set = [
+    { name = "provider.name", value = "cloudflare" },
+    { name = "env[0].name", value = "CF_API_TOKEN" },
+    { name = "env[0].valueFrom.secretKeyRef.name", value = kubernetes_secret.cloudflare_api_token.metadata[0].name },
+    { name = "env[0].valueFrom.secretKeyRef.key", value = "cloudflare_api_token" },
+    { name = "policy", value = "sync" },
+    { name = "sources[0]", value = "ingress" },
+    { name = "domainFilters[0]", value = var.cloudflare_domain_name },
+    { name = "txtOwnerId", value = local.eks_cluster_name },
+  ]
 
   depends_on = [kubernetes_secret.cloudflare_api_token, helm_release.aws_load_balancer_controller]
 }
@@ -698,15 +646,11 @@ resource "helm_release" "tailscale_operator" {
   # set_sensitive (not set) - these are real OAuth credentials, not just
   # references to something else (unlike every other helm_release in this
   # file, which only ever passes ARNs/resource names through `set`).
-  set_sensitive {
-    name  = "oauth.clientId"
-    value = var.tailscale_oauth_client_id
-  }
-
-  set_sensitive {
-    name  = "oauth.clientSecret"
-    value = var.tailscale_oauth_client_secret
-  }
+  # Helm provider v3: a list attribute, not repeated blocks.
+  set_sensitive = [
+    { name = "oauth.clientId", value = var.tailscale_oauth_client_id },
+    { name = "oauth.clientSecret", value = var.tailscale_oauth_client_secret },
+  ]
 
   depends_on = [module.eks]
 }
@@ -751,10 +695,9 @@ resource "helm_release" "kube_prometheus_stack" {
   # the static values file - same reasoning as aws_load_balancer_controller's
   # serviceAccount annotation above. Grants ec2_sd_configs (see the values
   # file) permission to actually call ec2:DescribeInstances.
-  set {
-    name  = "prometheus.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = module.eks.prometheus_irsa_role_arn
-  }
+  set = [
+    { name = "prometheus.serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn", value = module.eks.prometheus_irsa_role_arn },
+  ]
 
   # LimitRange/ResourceQuota must exist before any of this chart's pods do -
   # both apply at admission time, not retroactively. The StorageClass must
