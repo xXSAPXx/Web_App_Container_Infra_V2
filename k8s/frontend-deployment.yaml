@@ -38,27 +38,45 @@ spec:
             matchLabels:
               app: frontend                        # which pods to spread
       terminationGracePeriodSeconds: 60            # 30s preStop sleep + ~30s for httpd to exit after its stop signal
+      automountServiceAccountToken: false          # httpd never calls the Kubernetes API - don't hand it a token
+      securityContext:                             # pod level - applies to every container + volume in the pod
+        runAsNonRoot: true                         # refuse to start if anything would run as root
+        runAsUser: 10001                           # fixed non-root UID (kube-score wants > 10000 - no overlap with host users)
+        runAsGroup: 10001
+        fsGroup: 10001                             # emptyDirs below get group 10001 -> writable by httpd (without it: "could not create logs/httpd.pid", crash)
+        seccompProfile:
+          type: RuntimeDefault                     # block dangerous/unneeded kernel syscalls
       containers:
         - name: frontend
-          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:436fdcb"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-frontend:a4feae1"
           imagePullPolicy: Always
           ports:
-            - containerPort: 80
+            - containerPort: 8080                  # non-root can't bind < 1024 - httpd.conf Listen 8080
+          securityContext:                         # container level
+            allowPrivilegeEscalation: false        # no setuid/sudo-style escalation
+            readOnlyRootFilesystem: true           # nobody can modify files/binaries in the container - writes only to the emptyDirs
+            capabilities:
+              drop: ["ALL"]                        # no special Linux privileges at all
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp                      # scratch space
+            - name: httpd-logs
+              mountPath: /usr/local/apache2/logs   # httpd's PID file (access/error logs go to stdout/stderr)
           startupProbe:                            # "has the app finished booting?" - readiness/liveness wait until this passes
             httpGet:
               path: /
-              port: 80
+              port: 8080
             periodSeconds: 2
             failureThreshold: 30                   # up to ~60s to boot before the container is restarted
           readinessProbe:                          # "should this pod get traffic?" - fails fast, never restarts the pod
             httpGet:
               path: /                              # the page httpd actually serves
-              port: 80
+              port: 8080
             periodSeconds: 5                       # check often...
             failureThreshold: 2                    # ...out of rotation after ~10s of failures
           livenessProbe:                           # "is the process hung?" - restarts the pod, so kept lighter and patient
             tcpSocket:
-              port: 80                             # just "is the socket accepting" - differs from readiness on purpose
+              port: 8080                           # just "is the socket accepting" - differs from readiness on purpose
             periodSeconds: 20
             failureThreshold: 3                    # restart only after ~60s unresponsive
           lifecycle:
@@ -74,6 +92,13 @@ spec:
               cpu: 100m
               memory: 128Mi
               ephemeral-storage: 250Mi             # over this, only this pod is evicted - not the whole node via DiskPressure
+      volumes:                                     # the only writable paths - root filesystem is read-only
+        - name: tmp
+          emptyDir:
+            sizeLimit: 50Mi
+        - name: httpd-logs
+          emptyDir:
+            sizeLimit: 10Mi                        # just the PID file
 ---
 # Limits VOLUNTARY disruptions (node drains, node group upgrades, autoscaler
 # scale-down) - a drain waits here instead of evicting both replicas at once.
