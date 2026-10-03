@@ -38,12 +38,28 @@ spec:
             matchLabels:
               app: backend                         # which pods to spread
       terminationGracePeriodSeconds: 60            # 30s preStop sleep + ~30s for the app to exit after SIGTERM
+      automountServiceAccountToken: false          # the backend never calls the Kubernetes API - don't hand it a token
+      securityContext:                             # pod level - applies to every container + volume in the pod
+        runAsNonRoot: true                         # refuse to start if anything would run as root
+        runAsUser: 10001                           # fixed non-root UID (kube-score wants > 10000 - no overlap with host users)
+        runAsGroup: 10001
+        fsGroup: 10001                             # the /tmp emptyDir gets group 10001 -> writable by the app
+        seccompProfile:
+          type: RuntimeDefault                     # block dangerous/unneeded kernel syscalls
       containers:
         - name: backend
-          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-backend:436fdcb"
+          image: "341587087009.dkr.ecr.us-east-1.amazonaws.com/calc-app-backend:a4feae1"
           imagePullPolicy: Always
           ports:
-            - containerPort: 3000
+            - containerPort: 3000                  # > 1024, so no port change needed to run as non-root
+          securityContext:                         # container level
+            allowPrivilegeEscalation: false        # no setuid/sudo-style escalation
+            readOnlyRootFilesystem: true           # nobody can modify files/binaries in the container - the app only reads (e.g. certs/rds-ca-bundle.pem)
+            capabilities:
+              drop: ["ALL"]                        # no special Linux privileges at all
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp                      # scratch space - the only writable path
           envFrom:
             - configMapRef:
                 name: backend-config
@@ -82,6 +98,10 @@ spec:
               cpu: 250m
               memory: 256Mi
               ephemeral-storage: 250Mi             # over this, only this pod is evicted - not the whole node via DiskPressure
+      volumes:                                     # the only writable path - root filesystem is read-only
+        - name: tmp
+          emptyDir:
+            sizeLimit: 50Mi
 ---
 # Limits VOLUNTARY disruptions (node drains, node group upgrades, autoscaler
 # scale-down) - a drain waits here instead of evicting both replicas at once.
