@@ -319,7 +319,7 @@ resource "helm_release" "aws_load_balancer_controller" {
 # Cloudflare API token, made available in-cluster for external-dns.
 # Reuses the same token Terraform itself uses (already scoped to DNS-edit
 # per the README's setup instructions) rather than requiring a second one.
-resource "kubernetes_secret" "cloudflare_api_token" {
+resource "kubernetes_secret_v1" "cloudflare_api_token" {
   metadata {
     name      = "cloudflare-api-token"
     namespace = "kube-system"
@@ -354,7 +354,7 @@ resource "helm_release" "external_dns" {
   set = [
     { name = "provider.name", value = "cloudflare" },
     { name = "env[0].name", value = "CF_API_TOKEN" },
-    { name = "env[0].valueFrom.secretKeyRef.name", value = kubernetes_secret.cloudflare_api_token.metadata[0].name },
+    { name = "env[0].valueFrom.secretKeyRef.name", value = kubernetes_secret_v1.cloudflare_api_token.metadata[0].name },
     { name = "env[0].valueFrom.secretKeyRef.key", value = "cloudflare_api_token" },
     { name = "policy", value = "sync" },
     { name = "sources[0]", value = "ingress" },
@@ -362,7 +362,7 @@ resource "helm_release" "external_dns" {
     { name = "txtOwnerId", value = local.eks_cluster_name },
   ]
 
-  depends_on = [kubernetes_secret.cloudflare_api_token, helm_release.aws_load_balancer_controller]
+  depends_on = [kubernetes_secret_v1.cloudflare_api_token, helm_release.aws_load_balancer_controller]
 }
 
 
@@ -402,7 +402,7 @@ resource "null_resource" "destroy_k8s_manifests" {
 # credentials aren't something kubectl/k8s manifests can know.
 # k8s/ manifests still assume this namespace already exists by the time
 # `kubectl apply -f k8s/` runs (i.e. always apply Terraform first).
-resource "kubernetes_namespace" "calc_app" {
+resource "kubernetes_namespace_v1" "calc_app" {
   metadata {
     name = "calc-app"
 
@@ -428,10 +428,10 @@ resource "random_password" "jwt_secret" {
   special = false
 }
 
-resource "kubernetes_secret" "backend_db" {
+resource "kubernetes_secret_v1" "backend_db" {
   metadata {
     name      = "backend-secrets"
-    namespace = kubernetes_namespace.calc_app.metadata[0].name
+    namespace = kubernetes_namespace_v1.calc_app.metadata[0].name
   }
 
   data = {
@@ -451,7 +451,7 @@ resource "kubernetes_secret" "backend_db" {
 # platform pods (aws-node, coredns, kube-proxy, ebs-csi, ALB controller,
 # external-dns) - these numbers stay comfortably under that with room to
 # spare for calc-app to grow. Bump them here if a real install needs more.
-resource "kubernetes_namespace" "monitoring" {
+resource "kubernetes_namespace_v1" "monitoring" {
   metadata {
     name = "monitoring"
   }
@@ -472,10 +472,10 @@ resource "kubernetes_namespace" "monitoring" {
 # "limit" = the hard ceiling a container can never exceed at runtime - go
 # over the memory limit and the container gets OOM-killed; go over the CPU
 # limit and it just gets throttled, not killed.
-resource "kubernetes_limit_range" "monitoring" {
+resource "kubernetes_limit_range_v1" "monitoring" {
   metadata {
     name      = "monitoring-default-limits"
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
   }
 
   spec {
@@ -519,10 +519,10 @@ resource "kubernetes_limit_range" "monitoring" {
 # per-container defaults/bounds), this caps the *sum* across every object in
 # the namespace. Once hit, the API server rejects new pods/PVCs outright
 # instead of letting them schedule and starve calc-app or the platform pods.
-resource "kubernetes_resource_quota" "monitoring" {
+resource "kubernetes_resource_quota_v1" "monitoring" {
   metadata {
     name      = "monitoring-quota"
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
   }
 
   spec {
@@ -555,7 +555,7 @@ resource "kubernetes_resource_quota" "monitoring" {
 # purpose - that keeps it on gp3's free baseline (3000 IOPS / 125 MB/s
 # regardless of size), plenty for Prometheus/Alertmanager/Grafana at this
 # scale, and the actual "cheap" part - setting either would raise the bill.
-resource "kubernetes_storage_class" "ebs_gp3" {
+resource "kubernetes_storage_class_v1" "ebs_gp3" {
   metadata {
     name = "ebs-gp3"
 
@@ -594,7 +594,7 @@ resource "kubernetes_storage_class" "ebs_gp3" {
 # StorageClass (the driver's extraVolumeTags is one fixed set for every
 # volume), and ebs-gp3 is the cluster-wide default. The common tags
 # (Environment/Owner/Repo/ManagedBy) come from extraVolumeTags.
-resource "kubernetes_storage_class" "ebs_gp3_observability" {
+resource "kubernetes_storage_class_v1" "ebs_gp3_observability" {
   metadata {
     name = "ebs-gp3-observability"
   }
@@ -656,10 +656,10 @@ resource "helm_release" "tailscale_operator" {
 }
 
 
-resource "kubernetes_secret" "grafana_admin" {
+resource "kubernetes_secret_v1" "grafana_admin" {
   metadata {
     name      = "grafana-admin-credentials"
-    namespace = kubernetes_namespace.monitoring.metadata[0].name
+    namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
   }
 
   data = {
@@ -684,7 +684,7 @@ resource "helm_release" "kube_prometheus_stack" {
   name       = "my-kube-prometheus-stack"
   repository = "https://prometheus-community.github.io/helm-charts"
   chart      = "kube-prometheus-stack"
-  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  namespace  = kubernetes_namespace_v1.monitoring.metadata[0].name
   version    = "88.2.0"
 
   values = [
@@ -704,12 +704,12 @@ resource "helm_release" "kube_prometheus_stack" {
   # exist before any PVC referencing it by name (once values.yaml turns on
   # persistence) can bind.
   depends_on = [
-    kubernetes_namespace.monitoring,
-    kubernetes_limit_range.monitoring,
-    kubernetes_resource_quota.monitoring,
-    kubernetes_storage_class.ebs_gp3,
-    kubernetes_storage_class.ebs_gp3_observability, # values file references it by name - Terraform can't infer this one
-    kubernetes_secret.grafana_admin,
+    kubernetes_namespace_v1.monitoring,
+    kubernetes_limit_range_v1.monitoring,
+    kubernetes_resource_quota_v1.monitoring,
+    kubernetes_storage_class_v1.ebs_gp3,
+    kubernetes_storage_class_v1.ebs_gp3_observability, # values file references it by name - Terraform can't infer this one
+    kubernetes_secret_v1.grafana_admin,
     helm_release.tailscale_operator,
   ]
 }
