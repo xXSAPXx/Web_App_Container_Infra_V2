@@ -12,5 +12,5 @@ COPY ./public /usr/local/apache2/htdocs/
 # Copy the custom httpd configuration file:
 COPY httpd.conf /usr/local/apache2/conf/httpd.conf
 
-# Expose port 80 for the HTTP server: 
-EXPOSE 80
+# httpd listens on 8080 (non-root can't bind <1024) - see Listen in httpd.conf:
+EXPOSE 8080
