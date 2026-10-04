@@ -21,8 +21,7 @@ There are **two separate Terraform states** here, on purpose:
 - **`IaC/terraform-app-stack/`** - everything else (VPC, EKS, RDS, bastion, ALB
   Controller). This is the ephemeral stack: spin it up for a session, tear it
   down afterward - the EKS control plane and NAT Gateway bill by the hour with
-  no "pause" state (see cost notes in the root README), and RDS is restored
-  from a snapshot on every apply anyway.
+  no "pause" state, and RDS is restored from a snapshot on every apply anyway.
 
 **First time only:**
 ```
@@ -39,8 +38,8 @@ terraform apply
    variables in `variables.tf`).
 2. `terraform apply` - provisions the VPC, EKS cluster + managed node group,
    RDS, the bastion host, the `calc-app` namespace + backend DB Secret, and
-   installs the AWS Load Balancer Controller + external-dns into the cluster
-   via Helm. (Looks up the ECR repos created earlier by name - it doesn't
+   installs the AWS Load Balancer Controller, external-dns, the Tailscale
+   operator and kube-prometheus-stack into the cluster via Helm. (Looks up the ECR repos created earlier by name - it doesn't
    create them.) Also enables the vpc-cni add-on's network policy agent, so
    the `NetworkPolicy` objects applied in step 5 are actually enforced.
    Also creates stable private DNS records for the bastion
@@ -50,23 +49,14 @@ terraform apply
    care that RDS gets a brand-new AWS-generated endpoint on every restore.
 3. Point kubectl at the new cluster:
    `aws eks update-kubeconfig --name $(terraform output -raw eks_cluster_name) --region us-east-1`
-4. Build and push the app images (no CI/CD pipeline yet - this is a manual
-   step for now; skip this step on repeat sessions if you haven't changed the
-   app code since your last push - the images from last time are still there).
-   Tag must match whatever `k8s/backend-deployment.yaml`/`frontend-deployment.yaml`
-   currently reference (`:v2` backend / `:v1` frontend as of this writing) -
-   `:latest` won't get picked up, the manifests pin exact tags on purpose so
-   a deploy is always reproducible instead of silently picking up whatever
-   was pushed most recently:
-   ```
-   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.us-east-1.amazonaws.com
-   docker build -t $(terraform output -raw ecr_frontend_repository_url):v1 ./frontend
-   docker push $(terraform output -raw ecr_frontend_repository_url):v1
-   docker build -t $(terraform output -raw ecr_backend_repository_url):v2 ./backend
-   docker push $(terraform output -raw ecr_backend_repository_url):v2
-   ```
-   Bump the tag on both this command and the matching `image:` line in
-   `k8s/` whenever you change that app's code.
+4. App images are built by CI, not here: every merge to `main` that touches
+   `backend/` or `frontend/` runs the **Build & Push to ECR** workflow (tests,
+   Trivy gate, push as `v<run number>` and the short commit SHA). The images
+   live in the persistent ECR root, so they're already there on every
+   bring-up. To deploy a new build, bump the matching `image:` line in
+   `k8s/backend-deployment.yaml` / `k8s/frontend-deployment.yaml` - the
+   manifests pin exact tags on purpose (never `:latest`), so a deploy is
+   always reproducible.
 5. `./IaC/deploy-app.sh` - reads `acm_certificate_arn` straight from
    Terraform's outputs, renders the `k8s/*.yaml` templates with it, and
    applies everything (`DB_HOST` is a fixed value pointing at the stable DNS
@@ -113,7 +103,7 @@ Browser --------------> CloudFlare_Proxy --------------> ALB_DNS ---------------
                                                                               | Path Rule: '/calculator/  |  URL/*
                                                                               |   api/*'                  |
                                                                               V                            V
-                                                              backend Service (:3000)      frontend Service (:80)
+                                                              backend Service (:3000)      frontend Service (:80 -> pod :8080)
                                                               (Target Group Health Check:   (Target Group Health Check:
                                                                GET /backend)                 GET /)
                                                                       |                            |
@@ -150,7 +140,8 @@ out only for the traffic paths the app actually needs:
   resolve Service names or the RDS endpoint hostname.
 - `backend` -> RDS's private subnets, port 3306 - RDS isn't a pod, so this
   is an `ipBlock` rule rather than a pod selector.
-- the ALB -> `frontend`/`backend`, ports 80/3000 - also an `ipBlock` rule
+- the ALB -> `frontend`/`backend`, ports 8080/3000 (the pods' ports, not
+  the Services') - also an `ipBlock` rule
   (matching the public subnets the ALB's ENIs live in), since `target-type:
   ip` (see `k8s/ingress.yaml`) sends traffic straight from the ALB to pod
   IPs, bypassing the Services entirely.
