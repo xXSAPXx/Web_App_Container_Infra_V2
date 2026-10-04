@@ -32,7 +32,7 @@ jobs:
   actionlint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
@@ -40,7 +40,7 @@ jobs:
       # malformed expressions, invalid contexts, and shellcheck issues in
       # run: blocks. No security analysis here; that's zizmor's job below.
       - name: actionlint
-        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2
+        uses: raven-actions/actionlint@3d39aea434753780c3b3d4a1a31c854b4dbf49d7 # v2.2.0
 
   zizmor:
     runs-on: ubuntu-latest
@@ -58,7 +58,7 @@ jobs:
       # persist-credentials: false, per zizmor's own recommended setup -
       # this job only reads workflow files, so there's no reason for the
       # checkout token to stick around in the git config afterwards.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
