@@ -1,9 +1,9 @@
 # Calc App on AWS EKS
 
-[![Terraform Checks](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/terraform-checks.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/terraform-checks.yml)
-[![K8s Manifest Checks](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/k8s-checks.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/k8s-checks.yml)
-[![Actions Scan](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/actions-scan.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/actions-scan.yml)
-[![Build & Push](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/build-push-images.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/Web_App_Container_Infra_V2/actions/workflows/build-push-images.yml)
+[![Terraform Checks](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/terraform-checks.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/terraform-checks.yml)
+[![K8s Manifest Checks](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/k8s-checks.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/k8s-checks.yml)
+[![Actions Scan](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/actions-scan.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/actions-scan.yml)
+[![Build & Push](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/build-push-images.yml/badge.svg?branch=main)](https://github.com/xXSAPXx/aws-eks-platform/actions/workflows/build-push-images.yml)
 
 A three-tier calculator app (static frontend, Node.js API, MySQL) running on
 **AWS EKS** behind **Cloudflare** and an **ALB**, with all infrastructure in
@@ -159,28 +159,28 @@ in. The step-by-step bring-up and teardown is in
 - **One environment.** The stack takes an `environment` variable
   (`dev`, `stage`, `prod`), but only one is deployed.
 
-[#34]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/34
-[#45]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/45
-[#48]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/48
-[#53]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/53
-[#54]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/54
-[#59]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/59
-[#63]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/63
-[#67]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/67
-[#70]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/70
-[#71]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/71
-[#72]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/72
-[#73]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/73
-[#74]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/74
-[#76]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/76
-[#77]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/77
-[#78]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/78
-[#79]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/79
-[#82]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/82
-[#84]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/84
-[#85]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/85
-[#86]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/86
-[#87]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/87
-[#88]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/88
-[#89]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/89
-[#91]: https://github.com/xXSAPXx/Web_App_Container_Infra_V2/pull/91
+[#34]: https://github.com/xXSAPXx/aws-eks-platform/pull/34
+[#45]: https://github.com/xXSAPXx/aws-eks-platform/pull/45
+[#48]: https://github.com/xXSAPXx/aws-eks-platform/pull/48
+[#53]: https://github.com/xXSAPXx/aws-eks-platform/pull/53
+[#54]: https://github.com/xXSAPXx/aws-eks-platform/pull/54
+[#59]: https://github.com/xXSAPXx/aws-eks-platform/pull/59
+[#63]: https://github.com/xXSAPXx/aws-eks-platform/pull/63
+[#67]: https://github.com/xXSAPXx/aws-eks-platform/pull/67
+[#70]: https://github.com/xXSAPXx/aws-eks-platform/pull/70
+[#71]: https://github.com/xXSAPXx/aws-eks-platform/pull/71
+[#72]: https://github.com/xXSAPXx/aws-eks-platform/pull/72
+[#73]: https://github.com/xXSAPXx/aws-eks-platform/pull/73
+[#74]: https://github.com/xXSAPXx/aws-eks-platform/pull/74
+[#76]: https://github.com/xXSAPXx/aws-eks-platform/pull/76
+[#77]: https://github.com/xXSAPXx/aws-eks-platform/pull/77
+[#78]: https://github.com/xXSAPXx/aws-eks-platform/pull/78
+[#79]: https://github.com/xXSAPXx/aws-eks-platform/pull/79
+[#82]: https://github.com/xXSAPXx/aws-eks-platform/pull/82
+[#84]: https://github.com/xXSAPXx/aws-eks-platform/pull/84
+[#85]: https://github.com/xXSAPXx/aws-eks-platform/pull/85
+[#86]: https://github.com/xXSAPXx/aws-eks-platform/pull/86
+[#87]: https://github.com/xXSAPXx/aws-eks-platform/pull/87
+[#88]: https://github.com/xXSAPXx/aws-eks-platform/pull/88
+[#89]: https://github.com/xXSAPXx/aws-eks-platform/pull/89
+[#91]: https://github.com/xXSAPXx/aws-eks-platform/pull/91
