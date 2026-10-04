@@ -41,17 +41,15 @@ data "aws_iam_policy_document" "ecr_push_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
-    # The sub claim carries the repo NAME, so a rename changes it and
-    # GitHub's redirects don't help here. Both names are trusted during the
-    # rename to aws-eks-platform (multiple values = OR); the old one is
-    # dropped once the rename is done and CI has authenticated with the new.
+    # Immutable subject format (owner@ownerId/repo@repoId): GitHub switched
+    # this repo to it when it was renamed (any rename/new repo after
+    # 2026-07-15 gets it). The numeric IDs are never reused, so a recycled
+    # owner/repo name can't mint a matching token. IDs: GET
+    # api.github.com/users/xXSAPXx (.id) and .../repos/xXSAPXx/aws-eks-platform (.id).
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [
-        "repo:xXSAPXx/Web_App_Container_Infra_V2:ref:refs/heads/main",
-        "repo:xXSAPXx/aws-eks-platform:ref:refs/heads/main",
-      ]
+      values   = ["repo:xXSAPXx@113801124/aws-eks-platform@1022682171:ref:refs/heads/main"]
     }
   }
 }
