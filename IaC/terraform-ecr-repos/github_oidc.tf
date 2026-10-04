@@ -41,10 +41,17 @@ data "aws_iam_policy_document" "ecr_push_trust" {
       values   = ["sts.amazonaws.com"]
     }
 
+    # The sub claim carries the repo NAME, so a rename changes it and
+    # GitHub's redirects don't help here. Both names are trusted during the
+    # rename to aws-eks-platform (multiple values = OR); the old one is
+    # dropped once the rename is done and CI has authenticated with the new.
     condition {
       test     = "StringEquals"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["repo:xXSAPXx/Web_App_Container_Infra_V2:ref:refs/heads/main"]
+      values = [
+        "repo:xXSAPXx/Web_App_Container_Infra_V2:ref:refs/heads/main",
+        "repo:xXSAPXx/aws-eks-platform:ref:refs/heads/main",
+      ]
     }
   }
 }
