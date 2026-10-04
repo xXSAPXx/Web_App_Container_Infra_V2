@@ -46,13 +46,13 @@ jobs:
       # Skipped on the "closed" event - there's no new diff to compute
       # when a PR merges/closes, this run just needs to reach the diff
       # action below so it can mark the PR closed on Infracost's side.
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: github.event.action != 'closed'
         with:
           path: head
           persist-credentials: false
 
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: github.event.action != 'closed'
         with:
           ref: ${{ github.event.pull_request.base.ref }}
@@ -62,7 +62,7 @@ jobs:
       # version pins the scanner binary the action downloads at runtime -
       # the SHA above only pins the action's wrapper, and its default
       # ("latest") would pull whatever Infracost released most recently.
-      - uses: infracost/actions/diff@fb736a8f219195d6efdca58682069b16fe1bc280 # v4
+      - uses: infracost/actions/diff@fb736a8f219195d6efdca58682069b16fe1bc280 # v4.2.0
         with:
           version: 0.2.10
           api-key: ${{ secrets.INFRACOST_API_KEY }}

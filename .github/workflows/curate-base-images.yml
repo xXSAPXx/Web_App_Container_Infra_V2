@@ -52,14 +52,14 @@ jobs:
             context: base-images/node
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
       # Built locally first, no AWS credentials yet - nothing can reach the
       # registry before the scan below has passed.
       - name: Build ${{ matrix.image }}
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: ${{ matrix.context }}
           pull: true      # always the newest upstream image for this tag
@@ -86,7 +86,7 @@ jobs:
 
       - name: Log in to ECR
         id: ecr-login
-        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2
+        uses: aws-actions/amazon-ecr-login@03f1aad4c6c7ffd436567f42f9384779290529bd # v2.1.7
 
       # <image>-<run number>.<attempt>: the repo is IMMUTABLE, so a re-run
       # of a failed job needs a tag of its own (run_number alone would
