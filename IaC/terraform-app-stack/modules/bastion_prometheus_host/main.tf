@@ -57,14 +57,6 @@ resource "aws_instance" "bastion_prometheus" {
     # values/kube-prometheus-stack.yaml - anything
     # without this tag is ignored, not just this box
   }
-
-  # public_ip/public_dns perpetually re-diff to "(known after apply)" on
-  # every plan under AWS provider v6.x, even though the value never
-  # actually changes (confirmed live, same IP across multiple applies) -
-  # a provider quirk, not real drift.
-  lifecycle {
-    ignore_changes = [public_ip, public_dns]
-  }
 }
 
 

@@ -8,19 +8,13 @@
 # thumbprint_list is deliberately omitted - since July 2023 AWS validates
 # the OIDC provider's JWKS endpoint against its own trusted root CA list
 # and ignores any thumbprint passed for github's provider, so specifying
-# one is legacy/no-op with current provider versions.
+# one is legacy/no-op with current provider versions. Omitted, not `[]`:
+# AWS stores a thumbprint server-side anyway, and an explicit `[]` makes
+# every plan try to strip it. Left unset, the provider (Optional+Computed)
+# just accepts whatever AWS holds - no ignore_changes needed.
 resource "aws_iam_openid_connect_provider" "github_actions" {
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
-  thumbprint_list = []
-
-  # AWS validates the JWKS endpoint's own root CA since July 2023 -
-  # thumbprint_list is vestigial and AWS silently re-populates a value
-  # server-side regardless of what's sent here, so plan never converges
-  # to 0 without this. Confirmed live on AWS provider v6.65.
-  lifecycle {
-    ignore_changes = [thumbprint_list]
-  }
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
 
   tags = {
     Service = "ci"
